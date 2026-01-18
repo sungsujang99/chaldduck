@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    -webkit-tap-highlight-color: transparent;
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  }
+}
+
+@media (max-width: 420px) {
+  .grid-buyer {
+    display: block !important;
+  }
+  .grid-buyer input {
+    width: 100% !important;
+    margin-bottom: 10px !important;
+  }
+}

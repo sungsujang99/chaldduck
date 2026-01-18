@@ -1,0 +1,19 @@
+<svg width="200" height="150" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+  <!-- 흰색 배경 -->
+  <rect width="200" height="150" fill="#FFFFFF"/>
+  
+  <!-- 빨간 사과 -->
+  <ellipse cx="100" cy="60" rx="35" ry="40" fill="#FF4444" stroke="#000000" stroke-width="1"/>
+  
+  <!-- 사과 하이라이트 (연한 핑크/흰색) -->
+  <ellipse cx="85" cy="55" rx="8" ry="12" fill="#FFE4E1" opacity="0.8"/>
+  
+  <!-- 사과 줄기 (어두운 갈색) -->
+  <line x1="100" y1="25" x2="100" y2="20" stroke="#8B4513" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- 사과 잎 (초록색, 줄기 오른쪽) -->
+  <path d="M 100 25 Q 110 22 112 28 Q 110 30 108 28 Q 106 26 100 25" fill="#228B22" stroke="#000000" stroke-width="0.5"/>
+  
+  <!-- 찰떡상회 텍스트 -->
+  <text x="100" y="125" font-family="Arial, sans-serif" font-size="28" font-weight="bold" text-anchor="middle" fill="#000000" style="font-style: normal;">찰떡상회</text>
+</svg>
