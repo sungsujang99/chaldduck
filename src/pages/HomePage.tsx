@@ -27,27 +27,15 @@ import useItems from "../hooks/useItems";
 
 export default function HomePage() {
     const { buyerName, setBuyerName, buyerPhone, setBuyerPhone, buyerId, setBuyerId, handleLogin } = useBuyer();
-    const { address, setAddress, entranceCode, setEntranceCode, openAddressModal, saveAddress } = useAddress(buyerId);
+    const { address, setAddress, entranceCode, setEntranceCode, openAddressModal, saveAddress } = useAddress(buyerId, buyerName, buyerPhone);
     const { cart, setCart, changeQty } = useCart();
     const { paymentMethod, setPaymentMethod, showReceipt, setShowReceipt, receiptType, setReceiptType, receiptValue, setReceiptValue } = usePayment();
     const [purchaseType, setPurchaseType] = useState<PurchaseType>("pickup");
     const { menuItems } = useItems();
-    const summary = useOrderSummary({ cart, paymentMethod, purchaseType, menuItems });
+    const summary = useOrderSummary({ cart, paymentMethod, purchaseType, menuItems, zipCode: address.zipCode });
     const [orderEnabled, setOrderEnabled] = useState<boolean>(true);
     const [bankTransferEnabled, setBankTransferEnabled] = useState<boolean>(true);
     const [orderFeatureInfo, setOrderFeatureInfo] = useState<FeatureFlagResponse | null>(null);
-
-    const [defaultAddress, setDefaultAddress] = useState<Address>({
-        addressId: "",
-        label: "집",
-        recipientName: buyerName,
-        recipientPhone: buyerPhone,
-        zipCode: "",
-        address1: "",
-        address2: "",
-        isDefault: true,
-    });
-    const [defaultEntranceCode, setDefaultEntranceCode] = useState<string>("");
 
     const [showOrderConfirm, setShowOrderConfirm] = useState(false);
     const [agreeTerms, setAgreeTerms] = useState(false);
@@ -56,6 +44,7 @@ export default function HomePage() {
     const [completedOrderNo, setCompletedOrderNo] = useState<string>("");
     const [completedFinalAmount, setCompletedFinalAmount] = useState<number>(0);
     const [completedProductAmount, setCompletedProductAmount] = useState<number>(0);
+    const [completedDiscountAmount, setCompletedDiscountAmount] = useState<number>(0);
     const [completedDeliveryFee, setCompletedDeliveryFee] = useState<number>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -456,7 +445,8 @@ export default function HomePage() {
             // 모든 단계가 성공한 경우에만 주문 완료 모달 표시
             setCompletedOrderNo(orderNo);
             setCompletedFinalAmount(finalAmount);
-            setCompletedProductAmount(subtotalAmount - discountAmount);
+            setCompletedProductAmount(subtotalAmount); // 물품가격은 할인 전 금액
+            setCompletedDiscountAmount(discountAmount); // 총 할인 금액
             setCompletedDeliveryFee(deliveryFee);
             setShowOrderComplete(true);
             setCart([]);
@@ -472,10 +462,7 @@ export default function HomePage() {
         <div style={{ fontFamily: "'Apple SD Gothic Neo', sans-serif", background: "#f8f8f8", margin: 0, padding: "30px", display: "flex", justifyContent: "center", minHeight: "100vh" }}>
             <main style={{ maxWidth: "480px", width: "100%", background: "#fff", padding: "24px", borderRadius: "18px", boxShadow: "0 5px 15px rgba(0,0,0,0.08)" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px" }}>
-                    <Logo width="120" height="72" style={{ marginBottom: "12px" }} />
-                    <h1 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "4px" }}>
-                        {orderEnabled ? "찰떡상회 주문서" : "찰떡상회 상품 목록"}
-                    </h1>
+                    <Logo width="120" height="72" />
                 </div>
                 <div style={{ display: "flex", height: "66px", alignItems: "center", gap: "8px", marginBottom: "24px" }}>
                     <Instagram width={"40px"} cursor={"pointer"} onClick={() => window.open("https://www.instagram.com/chaldduk_delivery?igsh=MW9seHdzY2U4aHpuNA==", "_blank")} />
@@ -506,10 +493,6 @@ export default function HomePage() {
                             buyerId={buyerId}
                             handleOrderModalOpen={setShowOrderConfirm}
                             handleLogin={() => handleLogin()}
-                            defaultAddress={defaultAddress}
-                            setDefaultAddress={setDefaultAddress}
-                            defaultEntranceCode={defaultEntranceCode}
-                            setDefaultEntranceCode={setDefaultEntranceCode}
                         />
                         <PurchaseTypeSection
                             purchaseType={purchaseType}
@@ -519,7 +502,6 @@ export default function HomePage() {
                             entranceCode={entranceCode}
                             setEntranceCode={setEntranceCode}
                             openAddressModal={openAddressModal}
-                            defaultAddress={defaultAddress}
                             bankTransferEnabled={bankTransferEnabled}
                         />
                     </>
@@ -573,6 +555,7 @@ export default function HomePage() {
                 paymentMethod={paymentMethod}
                 buyerName={buyerName}
                 productAmount={completedProductAmount}
+                discountAmount={completedDiscountAmount}
                 deliveryFee={completedDeliveryFee}
                 onClose={() => setShowOrderComplete(false)}
             />

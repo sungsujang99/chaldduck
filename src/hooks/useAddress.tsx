@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Address } from "../types/types";
 import { getCustomerProfile, addAddress, updateAddress } from "../api/customer";
 import type { AddressResponse } from "../types/api";
 
-export const useAddress = (customerId: number | null) => {
+export const useAddress = (customerId: number | null, buyerName?: string, buyerPhone?: string) => {
     const [address, setAddress] = useState<Address>({
         addressId: "",
         label: "집",
-        recipientName: "",
-        recipientPhone: "",
+        recipientName: buyerName || "",
+        recipientPhone: buyerPhone || "",
         zipCode: "",
         address1: "",
         address2: "",
@@ -16,6 +16,8 @@ export const useAddress = (customerId: number | null) => {
     });
     const [addresses, setAddresses] = useState<AddressResponse[]>([]);
     const [entranceCode, setEntranceCode] = useState("");
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isInitialLoadRef = useRef(true);
 
     useEffect(() => {
         if (customerId) {
@@ -38,6 +40,7 @@ export const useAddress = (customerId: number | null) => {
                 const entranceMatch = defaultAddr.address2.match(/공동현관[:\s]*(\d+)/);
                 const entrance = entranceMatch ? entranceMatch[1] : "";
                 
+                isInitialLoadRef.current = true;
                 setAddress({
                     addressId: String(defaultAddr.addressId),
                     label: defaultAddr.label,
@@ -49,6 +52,7 @@ export const useAddress = (customerId: number | null) => {
                     isDefault: defaultAddr.isDefault,
                 });
                 setEntranceCode(entrance);
+                isInitialLoadRef.current = false;
             }
         } catch (error) {
             console.error("Failed to load addresses:", error);
@@ -59,10 +63,17 @@ export const useAddress = (customerId: number | null) => {
         if ((window as any).daum && (window as any).daum.Postcode) {
             new (window as any).daum.Postcode({
                 oncomplete: function (data: any) {
+                    // 다음 우편번호 API 응답 구조 확인 및 우편번호 추출
+                    // zonecode가 없거나 잘못된 경우 다른 필드 확인
+                    const zipCode = data.zonecode || data.postcode || data.postCode || "";
+                    
+                    console.log("다음 우편번호 API 응답:", data);
+                    console.log("추출된 우편번호:", zipCode);
+                    
                     setAddress((prev) => ({
                         ...prev,
                         address1: data.roadAddress || data.jibunAddress,
-                        zipCode: data.zonecode,
+                        zipCode: zipCode,
                     }));
                 },
             }).open();
@@ -71,13 +82,11 @@ export const useAddress = (customerId: number | null) => {
         }
     };
 
-    const saveAddress = async () => {
+    const saveAddress = useCallback(async (showAlert = false) => {
         if (!customerId) {
-            alert("고객 정보를 먼저 입력해주세요.");
             return;
         }
         if (!address.address1 || !address.address2 || !address.recipientName || !address.recipientPhone) {
-            alert("주소 정보를 모두 입력해주세요.");
             return;
         }
         try {
@@ -100,23 +109,73 @@ export const useAddress = (customerId: number | null) => {
                 });
             } else {
                 // 추가
-                await addAddress(customerId, {
+                const newAddress = await addAddress(customerId, {
                     label: address.label,
                     recipientName: address.recipientName,
                     recipientPhone: address.recipientPhone,
                     zipCode: address.zipCode,
                     address1: address.address1,
                     address2: finalAddress2,
-                    isDefault: address.isDefault,
+                    isDefault: true, // 새로 입력된 주소는 기본 주소로 설정
                 });
+                // 새로 생성된 주소의 ID를 설정
+                if (newAddress?.data?.addressId) {
+                    setAddress((prev) => ({ ...prev, addressId: String(newAddress.data.addressId) }));
+                }
             }
             await loadAddresses();
-            alert("주소가 저장되었습니다.");
+            if (showAlert) {
+                alert("주소가 저장되었습니다.");
+            }
         } catch (error) {
             console.error("Failed to save address:", error);
-            alert("주소 저장 중 오류가 발생했습니다.");
+            if (showAlert) {
+                alert("주소 저장 중 오류가 발생했습니다.");
+            }
         }
-    };
+    }, [customerId, address, entranceCode]);
+
+    // 주소가 변경될 때마다 자동 저장 (debounce)
+    useEffect(() => {
+        // 초기 로드 시에는 저장하지 않음
+        if (isInitialLoadRef.current) {
+            return;
+        }
+        
+        // customerId가 없거나 필수 정보가 없으면 저장하지 않음
+        if (!customerId || !address.address1 || !address.address2 || !address.recipientName || !address.recipientPhone) {
+            return;
+        }
+
+        // 이전 타이머 취소
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        // 1초 후 자동 저장
+        saveTimeoutRef.current = setTimeout(() => {
+            saveAddress(false);
+        }, 1000);
+
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, [address.address1, address.address2, address.recipientName, address.recipientPhone, entranceCode, customerId, saveAddress]);
+
+    // buyerName과 buyerPhone이 변경되면 address에도 반영
+    useEffect(() => {
+        if (buyerName) {
+            setAddress((prev) => ({ ...prev, recipientName: buyerName }));
+        }
+    }, [buyerName]);
+
+    useEffect(() => {
+        if (buyerPhone) {
+            setAddress((prev) => ({ ...prev, recipientPhone: buyerPhone }));
+        }
+    }, [buyerPhone]);
 
     return {
         address,

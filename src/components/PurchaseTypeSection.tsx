@@ -11,11 +11,10 @@ interface Props {
     entranceCode: string;
     setEntranceCode: (v: string) => void;
     openAddressModal: () => void;
-    defaultAddress: Address;
     bankTransferEnabled?: boolean;
 }
 
-export const PurchaseTypeSection: React.FC<Props> = ({ purchaseType, setPurchaseType, address, setAddress, entranceCode, setEntranceCode, openAddressModal, defaultAddress, bankTransferEnabled = true }) => {
+export const PurchaseTypeSection: React.FC<Props> = ({ purchaseType, setPurchaseType, address, setAddress, entranceCode, setEntranceCode, openAddressModal, bankTransferEnabled = true }) => {
     return (
         <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: "16px", padding: "16px", marginBottom: "18px" }}>
             <h3 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "12px" }}>🏪 구매 방식</h3>
@@ -70,35 +69,6 @@ export const PurchaseTypeSection: React.FC<Props> = ({ purchaseType, setPurchase
 
             {purchaseType === "delivery" && (
                 <div style={{ marginTop: "10px" }}>
-                    {defaultAddress.address1 && (
-                        <div 
-                            style={{ 
-                                fontWeight: 500, 
-                                color: "#1E6EFF", 
-                                cursor: "pointer",
-                                padding: "8px",
-                                borderRadius: "8px",
-                                marginBottom: "8px",
-                                background: "#f0f7ff",
-                                border: "1px solid #1E6EFF",
-                                transition: "all 0.2s"
-                            }} 
-                            onClick={() => {
-                                setAddress({
-                                    ...defaultAddress,
-                                    addressId: defaultAddress.addressId || "",
-                                });
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "#e0f0ff";
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "#f0f7ff";
-                            }}
-                        >
-                            📍 기본 배송지 불러오기
-                        </div>
-                    )}
                     <input
                         type="text"
                         value={address.address1}

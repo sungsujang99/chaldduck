@@ -230,8 +230,14 @@ export const OrderConfirmModal: React.FC<Props> = ({ show, id, onClose, onCancel
                                     </SummaryRow>
                                     <SummaryRow>
                                         <span>물품가격:</span>
-                                        <span>₩{(order.subtotalAmount - order.discountAmount).toLocaleString()}</span>
+                                        <span>₩{order.subtotalAmount.toLocaleString()}</span>
                                     </SummaryRow>
+                                    {order.discountAmount !== 0 && (
+                                        <SummaryRow>
+                                            <span>총 할인:</span>
+                                            <span className="discount">-₩{Math.abs(order.discountAmount).toLocaleString()}</span>
+                                        </SummaryRow>
+                                    )}
                                     <SummaryRow>
                                         <span>배송비:</span>
                                         <span>{order.deliveryFee === 0 ? "무료" : `₩${order.deliveryFee.toLocaleString()}`}</span>
@@ -313,8 +319,14 @@ export const OrderConfirmModal: React.FC<Props> = ({ show, id, onClose, onCancel
                                 <SummarySection>
                                     <SummaryRow>
                                         <span>물품가격</span>
-                                        <span>₩{(order.subtotalAmount - order.discountAmount).toLocaleString()}</span>
+                                        <span>₩{order.subtotalAmount.toLocaleString()}</span>
                                     </SummaryRow>
+                                    {order.discountAmount !== 0 && (
+                                        <SummaryRow>
+                                            <span>총 할인</span>
+                                            <span className="discount">-₩{Math.abs(order.discountAmount).toLocaleString()}</span>
+                                        </SummaryRow>
+                                    )}
                                     <SummaryRow>
                                         <span>배송비</span>
                                         <span>{order.deliveryFee === 0 ? "무료" : `₩${order.deliveryFee.toLocaleString()}`}</span>

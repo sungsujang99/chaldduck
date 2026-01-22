@@ -225,6 +225,7 @@ export interface PricingItem {
 
 export interface PricingRequest {
   paymentMethod: PaymentMethod;
+  fulfillmentType?: "PICKUP" | "DELIVERY";
   zipCode?: string;
   items: PricingItem[];
 }

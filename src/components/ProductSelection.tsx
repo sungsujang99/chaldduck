@@ -22,7 +22,7 @@ const CATEGORY_ORDER: ProductCategory[] = [
     "ICE_CREAM", "BEVERAGE", "GIFT_SET", "OTHER"
 ];
 
-export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, items, orderEnabled = true }) => {
+export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, items, purchaseType, orderEnabled = true }) => {
     const [editingProductId, setEditingProductId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState<string>("");
 
@@ -149,8 +149,12 @@ export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, it
                                     <br />
                                 </>
                             )}
-                            배송비: {summary.shipping === 0 ? "무료" : `₩${summary.shipping.toLocaleString()}`}
-                            <br />
+                            {purchaseType === "delivery" && (
+                                <>
+                                    배송비: {summary.shipping === 0 ? "무료" : `₩${summary.shipping.toLocaleString()}`}
+                                    <br />
+                                </>
+                            )}
                             <Divider />
                             <Bold>총 결제금액: ₩{summary.finalPrice.toLocaleString()}</Bold>
                         </>

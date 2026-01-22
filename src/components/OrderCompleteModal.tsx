@@ -9,12 +9,13 @@ interface Props {
     finalAmount: number;
     paymentMethod: "BANK_TRANSFER" | "CARD";
     buyerName: string;
-    productAmount: number; // 물품가격 (할인 적용된 금액)
+    productAmount: number; // 물품가격 (할인 적용 전 금액)
+    discountAmount: number; // 총 할인 금액
     deliveryFee: number; // 배송비
     onClose: () => void;
 }
 
-export const OrderCompleteModal: React.FC<Props> = ({ show, orderNo, finalAmount, paymentMethod, buyerName, productAmount, deliveryFee, onClose }) => {
+export const OrderCompleteModal: React.FC<Props> = ({ show, orderNo, finalAmount, paymentMethod, buyerName, productAmount, discountAmount, deliveryFee, onClose }) => {
     const [copiedField, setCopiedField] = useState<string | null>(null);
     
     const copyToClipboard = async (text: string, fieldName: string) => {
@@ -85,6 +86,11 @@ export const OrderCompleteModal: React.FC<Props> = ({ show, orderNo, finalAmount
                                 <div>
                                     <b>물품가격:</b> <span>₩{productAmount.toLocaleString()}</span>
                                 </div>
+                                {discountAmount !== 0 && (
+                                    <div>
+                                        <b>총 할인:</b> <span style={{ color: "#d32f2f" }}>-₩{Math.abs(discountAmount).toLocaleString()}</span>
+                                    </div>
+                                )}
                                 {deliveryFee > 0 && (
                                     <div>
                                         <b>배송비:</b> <span>₩{deliveryFee.toLocaleString()}</span>

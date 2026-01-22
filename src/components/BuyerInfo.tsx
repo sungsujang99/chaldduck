@@ -12,14 +12,9 @@ interface Props {
     buyerId: number | null;
     handleLogin: () => Promise<void>;
     handleOrderModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    defaultAddress: Address;
-    setDefaultAddress: React.Dispatch<React.SetStateAction<Address>>;
-    defaultEntranceCode: string;
-    setDefaultEntranceCode: React.Dispatch<React.SetStateAction<string>>;
 }
 
-export const BuyerInfo: React.FC<Props> = ({ buyerName, setBuyerName, buyerPhone, setBuyerPhone, buyerId, handleLogin, defaultAddress, setDefaultAddress, defaultEntranceCode, setDefaultEntranceCode, handleOrderModalOpen }) => {
-    const [addresses, setAddresses] = useState<Address[]>([]);
+export const BuyerInfo: React.FC<Props> = ({ buyerName, setBuyerName, buyerPhone, setBuyerPhone, buyerId, handleLogin, handleOrderModalOpen }) => {
     const [isAutoChecking, setIsAutoChecking] = useState(false);
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,73 +54,6 @@ export const BuyerInfo: React.FC<Props> = ({ buyerName, setBuyerName, buyerPhone
         return () => clearTimeout(timer);
     }, [buyerName, buyerPhone, buyerId, handleLogin, isAutoChecking]);
 
-    const fetchUserData = async () => {
-        if (!buyerId) return;
-        try {
-            const res = await urlAxios.get(`/customers/${buyerId}/profile`);
-            console.log("Profile data:", res.data.data);
-            console.log("Customer blocked status:", res.data.data?.blockInfo?.blocked);
-            setAddresses(res.data.data.addresses);
-        } catch (e) {
-            console.log(e);
-        }
-    };
-
-    const submitAddress = async () => {
-        const method = defaultAddress.addressId != "" ? "PUT" : "POST";
-
-        let data: any = {
-            label: defaultAddress.label,
-            recipientName: buyerName,
-            recipientPhone: buyerPhone,
-            zipCode: defaultAddress.zipCode,
-            address1: defaultAddress.address1,
-            address2: defaultAddress.address2,
-            isDefault: true,
-        };
-
-        if (method == "PUT") {
-            data = { ...data, addressId: defaultAddress.addressId };
-        }
-
-        console.log(data);
-
-        if (!buyerId) return;
-        try {
-            const res = await urlAxios({
-                method: method,
-                url: `/customers/${buyerId}/addresses${defaultAddress.addressId != "" ? `/${defaultAddress.addressId}` : ""}`,
-                data: data,
-            });
-            console.log(res.data.data);
-            fetchUserData();
-        } catch (e) {
-            console.log(e);
-        }
-    };
-
-    useEffect(() => {
-        addresses.forEach((a) => {
-            if (a.isDefault == true) {
-                // address2에서 공동현관 비밀번호 분리
-                const address2Parts = a.address2.split("\n");
-                const mainAddress2 = address2Parts[0] || a.address2;
-                const entranceMatch = a.address2.match(/공동현관[:\s]*(\d+)/);
-                const entrance = entranceMatch ? entranceMatch[1] : "";
-                
-                setDefaultAddress({
-                    ...a,
-                    address2: mainAddress2,
-                });
-                setDefaultEntranceCode(entrance);
-            }
-        });
-    }, [addresses, setDefaultAddress, setDefaultEntranceCode]);
-
-    useEffect(() => {
-        if (!buyerId) return;
-        fetchUserData();
-    }, [buyerId]);
 
     return (
         <Container>
@@ -143,76 +71,10 @@ export const BuyerInfo: React.FC<Props> = ({ buyerName, setBuyerName, buyerPhone
             </ButtonGrid>
 
             <ConfirmButton onClick={() => handleOrderModalOpen(true)}>주문확인</ConfirmButton>
-
-            {buyerId && <AddressArea address={defaultAddress} setAddress={setDefaultAddress} entranceCode={defaultEntranceCode} setEntranceCode={setDefaultEntranceCode} />}
         </Container>
     );
 };
 
-type AddressAreaProps = {
-    address: Address;
-    setAddress: React.Dispatch<React.SetStateAction<Address>>;
-    entranceCode: string;
-    setEntranceCode: React.Dispatch<React.SetStateAction<string>>;
-};
-
-const AddressArea = ({ address, setAddress, entranceCode, setEntranceCode }: AddressAreaProps) => {
-    const openAddressModal = () => {
-        if ((window as any).daum && (window as any).daum.Postcode) {
-            new (window as any).daum.Postcode({
-                oncomplete: function (data: any) {
-                    setAddress((prev) => ({ ...prev, address1: data.roadAddress || data.jibunAddress }));
-                },
-            }).open();
-        } else {
-            alert("주소 API를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
-        }
-    };
-
-    return (
-        <>
-            <Title>기본 배송지</Title>
-            <div style={{ marginTop: "10px" }}>
-                <input
-                    type="text"
-                    value={address ? address.address1 : ""}
-                    placeholder="배달 주소를 입력하세요"
-                    readOnly
-                    style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #ddd", marginTop: "8px", boxSizing: "border-box" }}
-                />
-                <button
-                    onClick={openAddressModal}
-                    style={{
-                        padding: "12px",
-                        border: "1px solid #ccc",
-                        borderRadius: "12px",
-                        cursor: "pointer",
-                        fontWeight: 600,
-                        width: "100%",
-                        marginTop: "8px",
-                        background: "#fff",
-                    }}
-                >
-                    📍 주소찾기
-                </button>
-                <input
-                    type="text"
-                    value={address ? address.address2 : ""}
-                    onChange={(e) => setAddress((prev) => ({ ...prev, address2: e.target.value }))}
-                    placeholder="상세주소를 입력하세요 (동/호수 등)"
-                    style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #ddd", marginTop: "8px", boxSizing: "border-box" }}
-                />
-                <input
-                    type="text"
-                    value={entranceCode}
-                    onChange={(e) => setEntranceCode(e.target.value)}
-                    placeholder="공동현관 비밀번호 (선택)"
-                    style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #ddd", marginTop: "8px", boxSizing: "border-box" }}
-                />
-            </div>
-        </>
-    );
-};
 
 export default BuyerInfo;
 
