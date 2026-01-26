@@ -168,10 +168,10 @@ export interface OrderCreateRequest {
   paymentMethod: PaymentMethod;
   items: OrderItemCreateRequest[];
   cashReceipt?: boolean;
-  receiptType?: "personal" | "business";
-  receiptValue?: string;
-  deliveryFee?: number;
-  finalAmount: number;
+  cashReceiptNo?: string;
+  zipCode?: string; // 배송 주문 시 우편번호 (배송비 정책 확인용)
+  deliveryFee?: number; // 클라이언트에서 계산한 배송비
+  finalAmount?: number; // 클라이언트에서 계산한 최종 금액
 }
 
 export interface OrderItemResponse {
@@ -225,7 +225,6 @@ export interface PricingItem {
 
 export interface PricingRequest {
   paymentMethod: PaymentMethod;
-  fulfillmentType?: "PICKUP" | "DELIVERY";
   zipCode?: string;
   items: PricingItem[];
 }
@@ -374,7 +373,7 @@ export interface DiscountPolicyCreateRequest {
 }
 
 // Shipping Policy 관련
-export type ShippingRuleType = "ZIP_PREFIX_FEE" | "FREE_OVER_AMOUNT" | "DEFAULT_FEE";
+export type ShippingRuleType = "ZIP_PREFIX_FEE" | "FREE_OVER_AMOUNT" | "DEFAULT_FEE" | "ZIP_CODE_DISCOUNT";
 
 export interface ShippingRule {
   id: number;
@@ -398,6 +397,7 @@ export interface ShippingRuleResponse {
   fee?: number;
   freeOverAmount?: number;
   active: boolean;
+  applyScope?: ApplyScope; // "ALL" | "PICKUP" - 배송비 룰 적용 범위
 }
 
 export interface ShippingRuleCreateRequest {

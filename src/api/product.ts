@@ -8,7 +8,15 @@ import type {
 
 // 상품+재고 목록 조회
 export const getProducts = async (): Promise<JsonBody<AdminProductStockRow[]>> => {
-  const response = await urlAxios.get("/admin/products");
+  const response = await urlAxios.get("/admin/products", {
+    headers: {
+      "Cache-Control": "no-cache",
+      "Pragma": "no-cache",
+    },
+    params: {
+      _t: Date.now(), // 캐시 방지를 위한 타임스탬프
+    },
+  });
   return response.data;
 };
 

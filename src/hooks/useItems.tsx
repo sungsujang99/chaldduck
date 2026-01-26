@@ -36,6 +36,7 @@ export const useItems = () => {
                         safetyStock: i.safetyStock,
                         soldOutStatus: i.soldOutStatus,
                         category: i.category,
+                        taxType: i.taxType,
                         bankDiscount: [],
                         qtyDiscount: [],
                     }));

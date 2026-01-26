@@ -12,7 +12,15 @@ import type {
 export const getActiveDiscountPolicies = async (): Promise<
   JsonBody<DiscountPolicyResponse[]>
 > => {
-  const response = await urlAxios.get("/admin/policies/discount/active");
+  const response = await urlAxios.get("/admin/policies/discount/active", {
+    headers: {
+      "Cache-Control": "no-cache",
+      "Pragma": "no-cache",
+    },
+    params: {
+      _t: Date.now(), // 캐시 방지를 위한 타임스탬프
+    },
+  });
   return response.data;
 };
 

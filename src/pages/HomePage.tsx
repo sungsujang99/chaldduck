@@ -227,6 +227,13 @@ export default function HomePage() {
             alert("⚠️ 개인정보 처리방침에 동의해주세요.");
             return;
         }
+        
+        if (!bankTransferEnabled && purchaseType === "delivery") {
+            alert("⚠️ 현재 배송 주문이 불가능합니다. 무통장 입금 기능이 비활성화되어 있습니다.");
+            setIsSubmitting(false);
+            return;
+        }
+        
         if (purchaseType === "delivery") {
             if (!address.address1 || !address.address2) {
                 alert("⚠️ 배달 주소를 입력해주세요.");
@@ -273,6 +280,7 @@ export default function HomePage() {
                     });
                     if (!customerRes.data || !customerRes.data.customerId) {
                         alert("⚠️ 고객 정보 저장에 실패했습니다. 다시 시도해주세요.");
+                        setIsSubmitting(false);
                         return;
                     }
                     currentBuyerId = customerRes.data.customerId;
@@ -281,6 +289,7 @@ export default function HomePage() {
                 } catch (err: any) {
                     console.error("Customer identify error:", err);
                     alert(`⚠️ 고객 정보 저장 중 오류가 발생했습니다: ${err.response?.data?.message || err.message}`);
+                    setIsSubmitting(false);
                     return;
                 }
             }
@@ -309,36 +318,55 @@ export default function HomePage() {
                         if (address.addressId) {
                             // 기존 주소 업데이트
                             const updateRes = await updateAddress(currentBuyerId, Number(address.addressId), addressData);
-                            if (!updateRes.data || !updateRes.data.addressId) {
-                                alert("⚠️ 주소 업데이트에 실패했습니다. 다시 시도해주세요.");
-                                return;
-                            }
-                            addressId = updateRes.data.addressId;
-                        } else {
-                            // 새 주소 저장
-                            const res = await addAddress(currentBuyerId, addressData);
-                            if (!res.data || !res.data.addressId) {
-                                alert("⚠️ 주소 저장에 실패했습니다. 다시 시도해주세요.");
-                                return;
-                            }
-                            addressId = res.data.addressId;
+                        if (!updateRes.data || !updateRes.data.addressId) {
+                            alert("⚠️ 주소 업데이트에 실패했습니다. 다시 시도해주세요.");
+                            setIsSubmitting(false);
+                            return;
                         }
+                        addressId = updateRes.data.addressId;
                     } else {
-                        alert("⚠️ 배달 주소를 모두 입력해주세요.");
-                        return;
+                        // 새 주소 저장
+                        const res = await addAddress(currentBuyerId, addressData);
+                        if (!res.data || !res.data.addressId) {
+                            alert("⚠️ 주소 저장에 실패했습니다. 다시 시도해주세요.");
+                            setIsSubmitting(false);
+                            return;
+                        }
+                        addressId = res.data.addressId;
                     }
-                } catch (err: any) {
-                    console.error("Address save error:", err);
-                    alert(`⚠️ 주소 저장 중 오류가 발생했습니다: ${err.response?.data?.message || err.message}`);
+                } else {
+                    alert("⚠️ 배달 주소를 모두 입력해주세요.");
+                    setIsSubmitting(false);
                     return;
                 }
+            } catch (err: any) {
+                console.error("Address save error:", err);
+                alert(`⚠️ 주소 저장 중 오류가 발생했습니다: ${err.response?.data?.message || err.message}`);
+                setIsSubmitting(false);
+                return;
+            }
             }
 
             // 주문 생성
             if (!summary) {
                 alert("⚠️ 주문 요약 정보가 없습니다.");
+                setIsSubmitting(false);
                 return;
             }
+
+            // 클라이언트에서 계산한 값들 (입금요청 화면과 동일한 값)
+            const clientDeliveryFee = summary.shipping;
+            const clientFinalAmount = summary.finalPrice;
+            const clientSubtotalAmount = summary.origin;
+            const clientDiscountAmount = summary.disc;
+
+            console.log("Order creation - Client calculated values:", {
+                deliveryFee: clientDeliveryFee,
+                finalAmount: clientFinalAmount,
+                subtotalAmount: clientSubtotalAmount,
+                discountAmount: clientDiscountAmount,
+                purchaseType
+            });
 
             const orderData = {
                 paymentMethod: paymentMethod,
@@ -349,15 +377,19 @@ export default function HomePage() {
                     productId: Number(item.id),
                 })),
                 cashReceipt: showReceipt,
-                ...(showReceipt && receiptType && receiptValue
-                    ? {
-                          receiptType: (receiptType === "personal" ? "personal" : "business") as "personal" | "business",
-                          receiptValue: receiptValue,
-                      }
-                    : {}),
-                deliveryFee: summary.shipping,
-                finalAmount: summary.finalPrice,
+                ...(showReceipt && receiptValue ? { cashReceiptNo: receiptValue } : {}),
+                // 배송 주문 시 우편번호 전달 (배송비 정책 확인용)
+                ...(purchaseType === "delivery" && address.zipCode ? { zipCode: address.zipCode.trim() } : {}),
+                // 클라이언트에서 계산한 배송비 및 최종 금액 전달 (입금요청 화면과 동일)
+                deliveryFee: clientDeliveryFee,
+                finalAmount: clientFinalAmount,
             };
+
+            console.log("Order creation request:", {
+                orderData,
+                purchaseType,
+                addressId: purchaseType === "delivery" ? addressId : null
+            });
 
             let orderRes;
             try {
@@ -366,6 +398,7 @@ export default function HomePage() {
                 } else {
                     if (!addressId) {
                         alert("⚠️ 주소 정보가 없습니다.");
+                        setIsSubmitting(false);
                         return;
                     }
                     orderRes = await createOrder(currentBuyerId, addressId, orderData);
@@ -374,23 +407,44 @@ export default function HomePage() {
                 // 주문 생성 응답 검증
                 if (!orderRes || !orderRes.data || !orderRes.data.orderId) {
                     alert("⚠️ 주문 생성에 실패했습니다. 응답 데이터가 올바르지 않습니다.");
+                    setIsSubmitting(false);
                     return;
                 }
             } catch (err: any) {
                 console.error("Order creation error:", err);
                 alert(`⚠️ 주문 생성 중 오류가 발생했습니다: ${err.response?.data?.message || err.message || "알 수 없는 오류"}`);
+                setIsSubmitting(false);
                 return;
             }
 
             const orderId = orderRes.data.orderId;
             const orderNo = orderRes.data.orderNo;
-            const finalAmount = orderRes.data.finalAmount;
-            const deliveryFee = orderRes.data.deliveryFee;
-            const subtotalAmount = orderRes.data.subtotalAmount;
-            const discountAmount = orderRes.data.discountAmount;
+            
+            // 서버 응답 값 확인 (디버깅용)
+            console.log("Order creation response:", {
+                orderId,
+                orderNo,
+                serverFinalAmount: orderRes.data.finalAmount,
+                serverDeliveryFee: orderRes.data.deliveryFee,
+                serverSubtotalAmount: orderRes.data.subtotalAmount,
+                serverDiscountAmount: orderRes.data.discountAmount,
+                clientFinalAmount: clientFinalAmount,
+                clientDeliveryFee: clientDeliveryFee,
+                clientSubtotalAmount: clientSubtotalAmount,
+                clientDiscountAmount: clientDiscountAmount
+            });
+            
+            // 클라이언트에서 계산한 값 사용 (입금요청 화면과 동일한 값)
+            // 서버가 클라이언트에서 전달한 값을 무시하고 자체 계산할 수 있으므로
+            // 클라이언트에서 계산한 값을 사용하여 일관성 유지
+            const finalAmount = clientFinalAmount;
+            const deliveryFee = clientDeliveryFee;
+            const subtotalAmount = clientSubtotalAmount;
+            const discountAmount = clientDiscountAmount;
 
             if (!orderNo) {
                 alert("⚠️ 주문번호를 받지 못했습니다. 주문이 정상적으로 생성되지 않았을 수 있습니다.");
+                setIsSubmitting(false);
                 return;
             }
 
@@ -418,6 +472,7 @@ export default function HomePage() {
                 // 결제 생성 응답 검증
                 if (!paymentRes || !paymentRes.data || !paymentRes.data.paymentId) {
                     alert("⚠️ 결제 생성에 실패했습니다. 주문은 생성되었지만 결제 정보가 저장되지 않았습니다. 고객센터로 문의해주세요.");
+                    setIsSubmitting(false);
                     return;
                 }
             } catch (err: any) {
@@ -438,6 +493,7 @@ export default function HomePage() {
                 } else {
                     // 다른 오류인 경우
                     alert(`⚠️ 결제 생성 중 오류가 발생했습니다: ${errorMessage}\n\n주문은 생성되었지만 결제 정보가 저장되지 않았습니다. 고객센터로 문의해주세요.`);
+                    setIsSubmitting(false);
                     return;
                 }
             }

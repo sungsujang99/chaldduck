@@ -1,7 +1,7 @@
 // src/components/OrderConfirmModal.tsx
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { BANK_ACCOUNT, SHOP_ADDRESS, SHOP_PHONE } from "../constants/index";
+import { BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_HOLDER, BANK_ACCOUNT, SHOP_ADDRESS, SHOP_PHONE } from "../constants/index";
 import { 
     getOrdersByCustomer, 
     cancelOrderByCustomer
@@ -248,7 +248,7 @@ export const OrderConfirmModal: React.FC<Props> = ({ show, id, onClose, onCancel
                                     </SummaryRow>
                                     {order.status === "CREATED" && (
                                         <CopyAllButton 
-                                            onClick={() => copyToClipboard(`우리은행\n1005904547315\n${order.finalAmount}`, order.orderId)}
+                                            onClick={() => copyToClipboard(`${BANK_NAME}\n${BANK_ACCOUNT_NUMBER}\n${order.finalAmount}`, order.orderId)}
                                             $copied={copiedOrderId === order.orderId}
                                         >
                                             {copiedOrderId === order.orderId ? "✓ 복사 완료!" : "📋 계좌번호·은행·금액 복사"}

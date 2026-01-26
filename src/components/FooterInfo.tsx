@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SHOP_NAME, SHOP_REPRESENTATIVE, SHOP_BUSINESS_NUMBER, SHOP_MAIL_ORDER_NUMBER, SHOP_ADDRESS, SHOP_PHONE } from "../constants/index";
 
 const FooterInfo = () => {
     const [showTerms, setShowTerms] = useState(false);
@@ -12,12 +13,12 @@ const FooterInfo = () => {
         <>
             {/* 상점 정보 */}
             <div style={{ fontSize: "12px", color: "#000", textAlign: "center", marginTop: "20px", lineHeight: "1.5", borderTop: "1px solid #eee", paddingTop: "10px" }}>
-                <b>상호명:</b> 찰떡상회 | <b>대표:</b> 이다금
+                <b>상호명:</b> {SHOP_NAME} | <b>대표:</b> {SHOP_REPRESENTATIVE}
                 <br />
-                <b>사업자등록번호:</b> 218-03-09205 | <b>통신판매업 신고번호:</b> 2023-김해장유-0584
+                <b>사업자등록번호:</b> {SHOP_BUSINESS_NUMBER} | <b>통신판매업 신고번호:</b> {SHOP_MAIL_ORDER_NUMBER}
                 <br />
-                <b>주소:</b> 경상남도 김해시 율하2로 126번길 8, 1층(율하동) | <b>고객센터:</b> 010-4144-0933
-                <br />ⓒ 2026 찰떡상회. All rights reserved.
+                <b>주소:</b> {SHOP_ADDRESS} | <b>고객센터:</b> {SHOP_PHONE}
+                <br />ⓒ 2026 {SHOP_NAME}. All rights reserved.
             </div>
 
             {/* 이용약관 */}

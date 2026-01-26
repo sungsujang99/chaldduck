@@ -1,7 +1,7 @@
 // src/components/OrderCompleteModal.tsx
 import React, { useState } from "react";
 import styled from "styled-components";
-import { BANK_ACCOUNT } from "../constants/index";
+import { BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_HOLDER, BANK_ACCOUNT } from "../constants/index";
 
 interface Props {
     show: boolean;
@@ -74,13 +74,13 @@ export const OrderCompleteModal: React.FC<Props> = ({ show, orderNo, finalAmount
                             <SectionTitle>💰 입금 계좌 정보</SectionTitle>
                             <InfoGrid>
                                 <div>
-                                    <b>은행:</b> 우리은행
+                                    <b>은행:</b> {BANK_NAME}
                                 </div>
                                 <div>
-                                    <b>계좌번호:</b> <strong style={{ fontSize: "16px", color: "#1976d2" }}>1005904547315</strong>
+                                    <b>계좌번호:</b> <strong style={{ fontSize: "16px", color: "#1976d2" }}>{BANK_ACCOUNT_NUMBER}</strong>
                                 </div>
                                 <div>
-                                    <b>예금주:</b> 찰떡상회
+                                    <b>예금주:</b> {BANK_ACCOUNT_HOLDER}
                                 </div>
                                 <DividerLine />
                                 <div>
@@ -104,7 +104,7 @@ export const OrderCompleteModal: React.FC<Props> = ({ show, orderNo, finalAmount
                                 </div>
                             </InfoGrid>
                             <CopyAllButton 
-                                onClick={() => copyToClipboard(`우리은행\n1005904547315\n${finalAmount}`, "all")}
+                                onClick={() => copyToClipboard(`${BANK_NAME}\n${BANK_ACCOUNT_NUMBER}\n${finalAmount}`, "all")}
                                 $copied={copiedField === "all"}
                             >
                                 {copiedField === "all" ? "✓ 복사 완료!" : "📋 계좌번호·은행·금액 한번에 복사"}
@@ -129,7 +129,7 @@ export const OrderCompleteModal: React.FC<Props> = ({ show, orderNo, finalAmount
                                 <Step>
                                     <StepNumber>3</StepNumber>
                                     <StepContent>
-                                        <b>받는 계좌:</b> 우리은행 1005904547315 (찰떡상회)
+                                        <b>받는 계좌:</b> {BANK_ACCOUNT}
                                     </StepContent>
                                 </Step>
                                 <Step>

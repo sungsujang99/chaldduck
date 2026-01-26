@@ -25,6 +25,8 @@ const CATEGORY_ORDER: ProductCategory[] = [
 export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, items, purchaseType, orderEnabled = true }) => {
     const [editingProductId, setEditingProductId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState<string>("");
+    // 카테고리별 접기/펼치기 상태 관리 (기본값: 모두 펼침)
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
     // 카테고리별로 상품 그룹화
     const groupedItems = useMemo(() => {
@@ -47,6 +49,19 @@ export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, it
                 items: groups[cat]
             }));
     }, [items]);
+
+    // 카테고리 토글 함수
+    const toggleCategory = (category: string) => {
+        setExpandedCategories(prev => ({
+            ...prev,
+            [category]: !prev[category]
+        }));
+    };
+
+    // 카테고리가 펼쳐져 있는지 확인 (기본값: true)
+    const isCategoryExpanded = (category: string) => {
+        return expandedCategories[category] !== false; // undefined면 true (기본 펼침)
+    };
 
     const handleQuantityClick = (productId: string, currentQty: number) => {
         setEditingProductId(productId);
@@ -79,10 +94,18 @@ export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, it
             <Title>🧁 상품 선택</Title>
 
             <div>
-                {groupedItems.map((group) => (
-                    <CategorySection key={group.category}>
-                        <CategoryHeader>{group.label}</CategoryHeader>
-                        {group.items.map((p) => {
+                {groupedItems.map((group) => {
+                    const isExpanded = isCategoryExpanded(group.category);
+                    return (
+                        <CategorySection key={group.category}>
+                            <CategoryHeader onClick={() => toggleCategory(group.category)}>
+                                <CategoryTitle>
+                                    <CategoryIcon>{isExpanded ? "▼" : "▶"}</CategoryIcon>
+                                    {group.label}
+                                </CategoryTitle>
+                                <CategoryCount>({group.items.length})</CategoryCount>
+                            </CategoryHeader>
+                            {isExpanded && group.items.map((p) => {
                             const item = cart.find((x) => x.id === p.productId);
                             const q = item ? item.qty : 0;
                             const isEditing = editingProductId === p.productId;
@@ -121,9 +144,10 @@ export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, it
                                     )}
                                 </ProductItem>
                             );
-                        })}
-                    </CategorySection>
-                ))}
+                            })}
+                        </CategorySection>
+                    );
+                })}
             </div>
 
             {orderEnabled && (
@@ -189,6 +213,9 @@ const CategorySection = styled.div`
 `;
 
 const CategoryHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-size: 15px;
     font-weight: 600;
     color: #555;
@@ -197,6 +224,35 @@ const CategoryHeader = styled.div`
     border-radius: 8px;
     margin-bottom: 10px;
     border-left: 3px solid #1E6EFF;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    }
+
+    &:active {
+        background: linear-gradient(135deg, #dee2e6 0%, #ced4da 100%);
+    }
+`;
+
+const CategoryTitle = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const CategoryIcon = styled.span`
+    font-size: 12px;
+    color: #1E6EFF;
+    transition: transform 0.2s;
+`;
+
+const CategoryCount = styled.span`
+    font-size: 13px;
+    color: #888;
+    font-weight: 500;
 `;
 
 const ProductItem = styled.div`
