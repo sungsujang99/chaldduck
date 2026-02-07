@@ -16,7 +16,7 @@ import { OrderCompleteModal } from "../components/OrderCompleteModal";
 import { createOrder, createPickupOrder } from "../api/order";
 import { createPayment, getPaymentByOrder } from "../api/payment";
 import { addAddress, updateAddress, identifyCustomer, getCustomerProfile } from "../api/customer";
-import { isOrderEnabled, isBankTransferEnabled, getOrderFeatureInfo } from "../api/feature";
+import { isOrderEnabled, isDeliveryOrderEnabled, getOrderFeatureInfo } from "../api/feature";
 import type { FeatureFlagResponse } from "../types/api";
 import { validatePhoneNumber, validatePersonalReceiptNumber, getPhoneValidationMessage, getPersonalReceiptValidationMessage } from "../utils/validation";
 import Instagram from "../assets/instagram.svg?react";
@@ -34,7 +34,7 @@ export default function HomePage() {
     const { menuItems } = useItems();
     const summary = useOrderSummary({ cart, paymentMethod, purchaseType, menuItems, zipCode: address.zipCode });
     const [orderEnabled, setOrderEnabled] = useState<boolean>(true);
-    const [bankTransferEnabled, setBankTransferEnabled] = useState<boolean>(true);
+    const [deliveryOrderEnabled, setDeliveryOrderEnabled] = useState<boolean>(true);
     const [orderFeatureInfo, setOrderFeatureInfo] = useState<FeatureFlagResponse | null>(null);
 
     const [showOrderConfirm, setShowOrderConfirm] = useState(false);
@@ -47,6 +47,17 @@ export default function HomePage() {
     const [completedDiscountAmount, setCompletedDiscountAmount] = useState<number>(0);
     const [completedDeliveryFee, setCompletedDeliveryFee] = useState<number>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isMobile, setIsMobile] = useState<boolean>(false);
+
+    // 모바일 여부 감지
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     // 주문 기능 활성화 여부 확인 및 오픈시간 정보 조회
     useEffect(() => {
@@ -133,29 +144,28 @@ export default function HomePage() {
         checkCustomerBlocked();
     }, [buyerId]);
 
-    // 무통장 거래 기능 활성화 여부 확인
+    // 배송 주문 기능 활성화 여부 확인
     useEffect(() => {
-        const checkBankTransferFeature = async () => {
+        const checkDeliveryOrderFeature = async () => {
             try {
-                const enabled = await isBankTransferEnabled();
-                setBankTransferEnabled(enabled);
-                // 무통장 거래가 비활성화되어 있고 현재 무통장 입금이 선택되어 있으면 카드로 변경
-                if (!enabled && paymentMethod === "BANK_TRANSFER") {
-                    setPaymentMethod("CARD");
-                }
-                // 무통장 거래가 비활성화되어 있고 현재 배송 주문이 선택되어 있으면 픽업으로 변경
-                if (!enabled && purchaseType === "delivery") {
-                    setPurchaseType("pickup");
-                    alert("⚠️ 배송 주문이 불가능합니다. 무통장 입금 기능이 비활성화되어 있어 픽업으로 변경되었습니다.");
-                }
+                const enabled = await isDeliveryOrderEnabled();
+                setDeliveryOrderEnabled(enabled);
             } catch (error) {
-                console.error("Failed to check bank transfer feature:", error);
+                console.error("Failed to check delivery order feature:", error);
                 // 기본값은 true로 설정
-                setBankTransferEnabled(true);
+                setDeliveryOrderEnabled(true);
             }
         };
-        checkBankTransferFeature();
-    }, [paymentMethod, setPaymentMethod, purchaseType, setPurchaseType]);
+        checkDeliveryOrderFeature();
+    }, []);
+
+    // 배송 주문이 비활성화되면 자동으로 픽업으로 전환
+    useEffect(() => {
+        if (!deliveryOrderEnabled && purchaseType === "delivery") {
+            console.log("배송 주문이 비활성화되어 픽업으로 전환합니다.");
+            setPurchaseType("pickup");
+        }
+    }, [deliveryOrderEnabled, purchaseType]);
 
     // 다음 우편번호 API 스크립트 로드
     useEffect(() => {
@@ -228,11 +238,7 @@ export default function HomePage() {
             return;
         }
         
-        if (!bankTransferEnabled && purchaseType === "delivery") {
-            alert("⚠️ 현재 배송 주문이 불가능합니다. 무통장 입금 기능이 비활성화되어 있습니다.");
-            setIsSubmitting(false);
-            return;
-        }
+        // bankTransferEnabled 체크 제거 - 배송은 UI에서 막고, 주문 제출은 허용
         
         if (purchaseType === "delivery") {
             if (!address.address1 || !address.address2) {
@@ -394,8 +400,10 @@ export default function HomePage() {
             let orderRes;
             try {
                 if (purchaseType === "pickup") {
+                    console.log("Creating PICKUP order via createPickupOrder API");
                     orderRes = await createPickupOrder(currentBuyerId, orderData);
                 } else {
+                    console.log("Creating DELIVERY order via createOrder API");
                     if (!addressId) {
                         alert("⚠️ 주소 정보가 없습니다.");
                         setIsSubmitting(false);
@@ -515,10 +523,10 @@ export default function HomePage() {
     };
 
     return (
-        <div style={{ fontFamily: "'Apple SD Gothic Neo', sans-serif", background: "#f8f8f8", margin: 0, padding: "30px", display: "flex", justifyContent: "center", minHeight: "100vh" }}>
-            <main style={{ maxWidth: "480px", width: "100%", background: "#fff", padding: "24px", borderRadius: "18px", boxShadow: "0 5px 15px rgba(0,0,0,0.08)" }}>
+        <div style={{ fontFamily: "'Apple SD Gothic Neo', sans-serif", background: "#f8f8f8", margin: 0, padding: isMobile ? "15px" : "30px", display: "flex", justifyContent: "center", minHeight: "100vh" }}>
+            <main style={{ maxWidth: "480px", width: "100%", background: "#fff", padding: isMobile ? "12px" : "24px", borderRadius: "18px", boxShadow: "0 5px 15px rgba(0,0,0,0.08)" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px" }}>
-                    <Logo width="120" height="72" />
+                    <Logo width="240" height="144" />
                 </div>
                 <div style={{ display: "flex", height: "66px", alignItems: "center", gap: "8px", marginBottom: "24px" }}>
                     <Instagram width={"40px"} cursor={"pointer"} onClick={() => window.open("https://www.instagram.com/chaldduk_delivery?igsh=MW9seHdzY2U4aHpuNA==", "_blank")} />
@@ -558,20 +566,22 @@ export default function HomePage() {
                             entranceCode={entranceCode}
                             setEntranceCode={setEntranceCode}
                             openAddressModal={openAddressModal}
-                            bankTransferEnabled={bankTransferEnabled}
+                            deliveryOrderEnabled={deliveryOrderEnabled}
                         />
                     </>
                 )}
 
-                <ProductSelection 
-                    cart={cart} 
-                    changeQty={changeQty} 
-                    items={menuItems} 
-                    paymentMethod={paymentMethod} 
-                    purchaseType={purchaseType} 
-                    summary={summary}
-                    orderEnabled={orderEnabled}
-                />
+                {orderEnabled && (
+                    <ProductSelection 
+                        cart={cart} 
+                        changeQty={changeQty} 
+                        items={menuItems} 
+                        paymentMethod={paymentMethod} 
+                        purchaseType={purchaseType} 
+                        summary={summary}
+                        orderEnabled={orderEnabled}
+                    />
+                )}
 
                 {orderEnabled && (
                     <>
@@ -584,7 +594,7 @@ export default function HomePage() {
                             setReceiptType={setReceiptType}
                             receiptValue={receiptValue}
                             setReceiptValue={setReceiptValue}
-                            bankTransferEnabled={bankTransferEnabled}
+                            deliveryOrderEnabled={deliveryOrderEnabled}
                         />
 
                         <OrderSummary 
@@ -595,6 +605,7 @@ export default function HomePage() {
                             agreePrivacy={agreePrivacy}
                             setAgreePrivacy={setAgreePrivacy}
                             isSubmitting={isSubmitting}
+                            paymentMethod={paymentMethod}
                         />
                     </>
                 )}

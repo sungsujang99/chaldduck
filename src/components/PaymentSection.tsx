@@ -12,10 +12,10 @@ interface Props {
     setReceiptType: (v: ReceiptType) => void;
     receiptValue: string;
     setReceiptValue: (v: string) => void;
-    bankTransferEnabled?: boolean;
+    deliveryOrderEnabled?: boolean;
 }
 
-export const PaymentSection: React.FC<Props> = ({ paymentMethod, setPaymentMethod, showReceipt, setShowReceipt, receiptType, setReceiptType, receiptValue, setReceiptValue, bankTransferEnabled = true }) => {
+export const PaymentSection: React.FC<Props> = ({ paymentMethod, setPaymentMethod, showReceipt, setShowReceipt, receiptType, setReceiptType, receiptValue, setReceiptValue, deliveryOrderEnabled = true }) => {
     const toggleReceipt = (show: boolean) => {
         setShowReceipt(show);
         if (!show) {
@@ -27,35 +27,36 @@ export const PaymentSection: React.FC<Props> = ({ paymentMethod, setPaymentMetho
     return (
         <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: "16px", padding: "16px", marginBottom: "18px" }}>
             <h3 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "12px" }}>💳 결제 방식</h3>
-            <div style={{ display: "grid", gridTemplateColumns: bankTransferEnabled ? "1fr 1fr" : "1fr", gap: "10px" }}>
-                {bankTransferEnabled && (
-                    <button
-                        onClick={() => setPaymentMethod("BANK_TRANSFER")}
-                        style={{
-                            padding: "12px",
-                            border: paymentMethod === "BANK_TRANSFER" ? "1px solid #111" : "1px solid #ccc",
-                            borderRadius: "12px",
-                            cursor: "pointer",
-                            fontWeight: 600,
-                            background: paymentMethod === "BANK_TRANSFER" ? "#111" : "#fff",
-                            color: paymentMethod === "BANK_TRANSFER" ? "#fff" : "#000",
-                        }}
-                    >
-                        무통장입금
-                    </button>
-                )}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 <button
-                    onClick={() => setPaymentMethod("CARD")}
+                    onClick={() => setPaymentMethod("BANK_TRANSFER")}
+                    style={{
+                        padding: "12px",
+                        border: paymentMethod === "BANK_TRANSFER" ? "1px solid #111" : "1px solid #ccc",
+                        borderRadius: "12px",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        background: paymentMethod === "BANK_TRANSFER" ? "#111" : "#fff",
+                        color: paymentMethod === "BANK_TRANSFER" ? "#fff" : "#000",
+                    }}
+                >
+                    무통장입금
+                </button>
+                <button
+                    onClick={() => {
+                        alert("⚠️ 카드/간편결제는 준비 중입니다.");
+                    }}
+                    disabled={true}
                     style={{
                         padding: "12px",
                         border: paymentMethod === "CARD" ? "1px solid #111" : "1px solid #ccc",
                         borderRadius: "12px",
-                        cursor: "pointer",
+                        cursor: "not-allowed",
                         fontWeight: 600,
-                        background: paymentMethod === "CARD" ? "#111" : "#fff",
-                        color: paymentMethod === "CARD" ? "#fff" : "#000",
+                        background: "#f5f5f5",
+                        color: "#999",
+                        opacity: 0.6,
                     }}
-                    disabled
                 >
                     카드/간편결제(준비중)
                 </button>

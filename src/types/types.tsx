@@ -20,7 +20,7 @@ export interface CartItem {
 }
 export type MenuItem = FetchedMenuItem & { bankDiscount: Discount[]; qtyDiscount: Discount[] };
 
-export type FetchedMenuItem = { productId: string; name: string; price: number; stockQty: number; safetyStock: number; soldOutStatus: string; category?: ProductCategory; taxType?: "TAXABLE" | "TAX_EXEMPT" };
+export type FetchedMenuItem = { productId: string; name: string; price: number; stockQty: number; safetyStock: number; soldOutStatus: string; categoryCode?: string; categoryName?: string; taxType?: "TAXABLE" | "TAX_EXEMPT" };
 export type DiscountRule = {
     id: string;
     type: DiscountType;

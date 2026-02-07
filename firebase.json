@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "chaldduck-35290",
+    "site": "chaldduck-system",
     "public": "dist",
     "ignore": [
       "firebase.json",

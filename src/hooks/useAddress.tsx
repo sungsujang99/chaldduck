@@ -69,10 +69,20 @@ export const useAddress = (customerId: number | null, buyerName?: string, buyerP
                     
                     console.log("다음 우편번호 API 응답:", data);
                     console.log("추출된 우편번호:", zipCode);
+                    console.log("건물명:", data.buildingName);
+                    console.log("아파트명:", data.apartment);
+                    
+                    // 기본 주소 (도로명 또는 지번)
+                    const baseAddress = data.roadAddress || data.jibunAddress;
+                    
+                    // 건물명이 있으면 괄호로 붙여서 추가
+                    const fullAddress = data.buildingName 
+                        ? `${baseAddress}(${data.buildingName})` 
+                        : baseAddress;
                     
                     setAddress((prev) => ({
                         ...prev,
-                        address1: data.roadAddress || data.jibunAddress,
+                        address1: fullAddress,
                         zipCode: zipCode,
                     }));
                 },

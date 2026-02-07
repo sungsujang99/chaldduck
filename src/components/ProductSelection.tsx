@@ -4,7 +4,6 @@ import styled from "styled-components";
 import { FetchedMenuItem, PaymentMethod } from "../types/types";
 import urlAxios from "../utils/urlAxios";
 import { UpdatedSummaryOutput } from "../hooks/useOrderSummary";
-import { CATEGORY_LABELS, ProductCategory } from "../types/api";
 
 interface Props {
     cart: { id: string; qty: number }[];
@@ -16,38 +15,37 @@ interface Props {
     orderEnabled?: boolean;
 }
 
-// 카테고리 정렬 순서
-const CATEGORY_ORDER: ProductCategory[] = [
-    "RICE_CAKE", "CAKE", "BREAD", "COOKIE", "CHOCOLATE", 
-    "ICE_CREAM", "BEVERAGE", "GIFT_SET", "OTHER"
-];
-
 export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, items, purchaseType, orderEnabled = true }) => {
     const [editingProductId, setEditingProductId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState<string>("");
     // 카테고리별 접기/펼치기 상태 관리 (기본값: 모두 펼침)
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
-    // 카테고리별로 상품 그룹화
+    // 카테고리별로 상품 그룹화 (서버에서 받은 categoryName 사용)
     const groupedItems = useMemo(() => {
-        const groups: Record<string, FetchedMenuItem[]> = {};
+        const groups: Record<string, { name: string; items: FetchedMenuItem[] }> = {};
         
         items.forEach(item => {
-            const category = item.category || "OTHER";
-            if (!groups[category]) {
-                groups[category] = [];
+            const categoryCode = item.categoryCode || "OTHER";
+            const categoryName = item.categoryName || "기타";
+            
+            if (!groups[categoryCode]) {
+                groups[categoryCode] = {
+                    name: categoryName,
+                    items: []
+                };
             }
-            groups[category].push(item);
+            groups[categoryCode].items.push(item);
         });
 
-        // 정렬된 카테고리 순서로 반환
-        return CATEGORY_ORDER
-            .filter(cat => groups[cat] && groups[cat].length > 0)
-            .map(cat => ({
-                category: cat,
-                label: CATEGORY_LABELS[cat],
-                items: groups[cat]
-            }));
+        // 카테고리 코드로 정렬하여 반환
+        return Object.entries(groups)
+            .map(([code, data]) => ({
+                category: code,
+                label: data.name,
+                items: data.items
+            }))
+            .sort((a, b) => a.category.localeCompare(b.category));
     }, [items]);
 
     // 카테고리 토글 함수
@@ -109,16 +107,22 @@ export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, it
                             const item = cart.find((x) => x.id === p.productId);
                             const q = item ? item.qty : 0;
                             const isEditing = editingProductId === p.productId;
+                            // 품절 여부 확인: 재고가 안전재고 이하이거나 soldOutStatus가 SOLD_OUT
+                            const isSoldOut = p.soldOutStatus === "SOLD_OUT" || p.stockQty <= p.safetyStock;
 
                             return (
-                                <ProductItem key={p.productId}>
+                                <ProductItem key={p.productId} style={{ opacity: isSoldOut ? 0.6 : 1 }}>
                                     <ProductInfo>
-                                        <b>{p.name}</b>
-                                        <br />
-                                        <span>₩{p.price.toLocaleString()}</span>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            <b style={{ color: isSoldOut ? "#999" : "#000" }}>{p.name}</b>
+                                            {isSoldOut && (
+                                                <SoldOutBadge>품절</SoldOutBadge>
+                                            )}
+                                        </div>
+                                        <span style={{ color: isSoldOut ? "#999" : "#000" }}>₩{p.price.toLocaleString()}</span>
                                     </ProductInfo>
 
-                                    {orderEnabled && (
+                                    {orderEnabled && !isSoldOut && (
                                         <QuantityControls>
                                             <QtyButton onClick={() => changeQty(p, -1)}>-</QtyButton>
                                             {isEditing ? (
@@ -136,6 +140,11 @@ export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, it
                                             )}
                                             <QtyButton onClick={() => changeQty(p, 1)}>+</QtyButton>
                                         </QuantityControls>
+                                    )}
+                                    {orderEnabled && isSoldOut && (
+                                        <div style={{ fontSize: "14px", color: "#999", fontWeight: "600" }}>
+                                            선택 불가
+                                        </div>
                                     )}
                                     {!orderEnabled && (
                                         <div style={{ fontSize: "14px", color: "#666" }}>
@@ -297,12 +306,12 @@ const QtyButton = styled.button`
 `;
 
 const Quantity = styled.span`
-    min-width: 28px;
+    min-width: 20px;
     text-align: center;
     font-weight: 600;
     font-size: 15px;
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 4px 6px;
     border-radius: 6px;
     transition: background-color 0.2s;
     user-select: none;
@@ -317,11 +326,11 @@ const Quantity = styled.span`
 `;
 
 const QuantityInput = styled.input`
-    width: 50px;
+    width: 40px;
     text-align: center;
     font-weight: 600;
     font-size: 15px;
-    padding: 4px 8px;
+    padding: 4px 6px;
     border: 2px solid #1E6EFF;
     border-radius: 6px;
     outline: none;
@@ -364,4 +373,14 @@ const Divider = styled.hr`
 
 const Bold = styled.b`
     color: ${(props) => props.color || "#000"};
+`;
+
+const SoldOutBadge = styled.span`
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: #ff4444;
+    border-radius: 4px;
 `;

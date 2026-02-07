@@ -212,125 +212,146 @@ export const useOrderSummary = ({ cart, paymentMethod, purchaseType, menuItems, 
     // 배달인 경우에만 배송비 정책 확인
     else if (purchaseType === "delivery" && shippingPolicies.length > 0) {
         const comparisonAmount = pricing.subtotalAmount;
-        let shippingRuleApplied = false;
         
-        console.log("Checking shipping policies:", {
+        console.log("🚚 배송비 정책 확인 시작:", {
             totalPolicies: shippingPolicies.length,
             zipCode,
             comparisonAmount,
             serverDeliveryFee: pricing.deliveryFee
         });
         
-        // 활성 정책 수집
+        // 활성 정책 수집 (현재 날짜 기준)
+        const now = new Date();
         const activePolicies = shippingPolicies.filter((policy) => {
             if (!policy.active) return false;
-            const now = new Date();
             const startAt = new Date(policy.startAt);
             const endAt = new Date(policy.endAt);
             return now >= startAt && now <= endAt;
         });
         
-        console.log("Active policies:", activePolicies.length, activePolicies.map(p => ({ name: p.name, rulesCount: p.rules?.length || 0 })));
+        console.log("활성 정책:", activePolicies.length, activePolicies.map(p => ({ 
+            name: p.name, 
+            rulesCount: p.rules?.length || 0,
+            rules: p.rules?.map(r => ({ type: r.type, label: r.label, active: r.active }))
+        })));
         
-        // ZIP_CODE_DISCOUNT 룰만 확인 (지역별 배송비 룰)
-        if (zipCode) {
+        // 배송비 룰 우선순위:
+        // 1. ZIP_CODE_DISCOUNT (우편번호 기반)
+        // 2. FREE_OVER_AMOUNT (금액 기반 무료 배송)
+        // 3. DEFAULT_FEE (기본 배송비)
+        
+        let ruleApplied = false;
+        
+        // 1단계: ZIP_CODE_DISCOUNT 확인 (최우선)
+        // 우편번호가 일치하면 이 규칙만 적용하고 다른 규칙은 무시
+        if (zipCode && !ruleApplied) {
             for (const policy of activePolicies) {
                 if (!policy.rules || policy.rules.length === 0) continue;
                 
                 for (const rule of policy.rules) {
-                    // ZIP_CODE_DISCOUNT 타입이고, 활성이고, zipPrefix가 있는 룰만 확인
-                    if (!rule.active || rule.type !== "ZIP_CODE_DISCOUNT" || !rule.zipPrefix) continue;
-                    
-                    // applyScope 확인
+                    if (!rule.active || rule.type !== "ZIP_CODE_DISCOUNT" || !rule.zipCode) continue;
                     if (rule.applyScope && rule.applyScope !== "ALL") continue;
                     
-                    // 우편번호 비교 (5자리 전체)
-                    const zipCodePrefix = zipCode.substring(0, Math.min(5, rule.zipPrefix.length));
-                    const rulePrefix = rule.zipPrefix.substring(0, Math.min(5, rule.zipPrefix.length));
+                    // 우편번호 5자리 비교
+                    const userZip = zipCode.substring(0, 5);
+                    const ruleZip = rule.zipCode.substring(0, 5);
                     
-                    console.log("Checking ZIP_CODE_DISCOUNT rule:", {
-                        ruleLabel: rule.label,
-                        zipCode,
-                        ruleZipPrefix: rule.zipPrefix,
-                        zipCodePrefix,
-                        rulePrefix,
-                        match: zipCodePrefix === rulePrefix,
-                        freeOverAmount: rule.freeOverAmount,
+                    console.log(`ZIP_CODE_DISCOUNT 룰 확인: ${rule.label}`, {
+                        userZip,
+                        ruleZip,
+                        match: userZip === ruleZip,
                         fee: rule.fee,
+                        freeOverAmount: rule.freeOverAmount,
                         comparisonAmount
                     });
                     
-                    if (zipCodePrefix !== rulePrefix) continue;
+                    if (userZip !== ruleZip) continue;
                     
-                    // 우편번호가 일치하면 해당 룰의 배송비 적용
-                    // 1. 무료 배송 조건 확인 (freeOverAmount가 있고 조건 만족)
+                    // ✅ 우편번호 일치! 이 규칙만 적용 (다른 FREE_OVER_AMOUNT, DEFAULT_FEE 무시)
+                    ruleApplied = true;
+                    
+                    // 무료 배송 조건 확인
                     if (rule.freeOverAmount && comparisonAmount >= rule.freeOverAmount) {
                         shipping = 0;
-                        shippingRuleApplied = true;
-                        console.log("✅ ZIP_CODE_DISCOUNT free shipping applied:", {
-                            ruleLabel: rule.label,
-                            zipCode,
-                            freeOverAmount: rule.freeOverAmount,
-                            comparisonAmount
+                        console.log(`✅ ZIP_CODE_DISCOUNT 무료 배송 적용: ${rule.label}`, {
+                            주문금액: `${comparisonAmount.toLocaleString()}원`,
+                            무료배송조건: `${rule.freeOverAmount.toLocaleString()}원 이상`,
+                            배송비: '0원'
                         });
-                        break;
-                    }
-                    // 2. 무료 배송 조건을 만족하지 않으면 해당 룰의 배송비 적용
-                    else if (rule.fee !== undefined) {
-                        shipping = rule.fee;
-                        shippingRuleApplied = true;
-                        console.log("✅ ZIP_CODE_DISCOUNT fee applied:", {
-                            ruleLabel: rule.label,
-                            zipCode,
-                            fee: rule.fee,
-                            comparisonAmount,
-                            freeOverAmount: rule.freeOverAmount
+                    } else {
+                        // 무료 조건 미충족 → 해당 룰의 배송비 적용
+                        shipping = rule.fee !== undefined ? rule.fee : 0;
+                        console.log(`✅ ZIP_CODE_DISCOUNT 배송비 적용: ${rule.label}`, {
+                            주문금액: `${comparisonAmount.toLocaleString()}원`,
+                            무료배송조건: `${rule.freeOverAmount?.toLocaleString()}원 이상`,
+                            설정된배송비: `${rule.fee}원`,
+                            적용된배송비: `${shipping.toLocaleString()}원`
                         });
-                        break;
+                        
+                        // ⚠️ 서버에서 fee가 0이거나 없으면 경고
+                        if (!rule.fee || rule.fee === 0) {
+                            console.warn(`⚠️ 경고: 배송비 룰 "${rule.label}"의 fee가 ${rule.fee}원입니다. 서버 설정을 확인하세요!`);
+                        }
                     }
+                    
+                    break; // 우편번호 일치하는 규칙 찾았으므로 종료
                 }
-                
-                if (shippingRuleApplied) break;
+                if (ruleApplied) break;
             }
         }
         
-        // ZIP_CODE_DISCOUNT가 적용되지 않은 경우에만 DEFAULT_FEE 확인
-        // (우편번호가 일치하지 않거나 ZIP_CODE_DISCOUNT 룰이 없는 경우)
-        
-        // 무료 배송이 적용되지 않은 경우 DEFAULT_FEE 확인
-        // 서버가 deliveryFee를 0으로 반환했어도 클라이언트에서 배송비 정책 확인하여 설정
-        if (!shippingRuleApplied) {
-            console.log("No free shipping applied, checking DEFAULT_FEE...");
+        // 2단계: FREE_OVER_AMOUNT 확인 (ZIP_CODE_DISCOUNT 적용 안된 경우만)
+        if (!ruleApplied) {
             for (const policy of activePolicies) {
                 if (!policy.rules || policy.rules.length === 0) continue;
                 
-                const defaultFeeRule = policy.rules.find(
-                    (rule) => rule.type === "DEFAULT_FEE" && rule.active && rule.fee !== undefined && (!rule.applyScope || rule.applyScope === "ALL")
-                );
-                
-                if (defaultFeeRule && defaultFeeRule.fee !== undefined) {
-                    shipping = defaultFeeRule.fee;
-                    console.log("✅ DEFAULT_FEE applied:", {
-                        ruleLabel: defaultFeeRule.label,
-                        fee: defaultFeeRule.fee,
-                        serverDeliveryFee: pricing.deliveryFee,
-                        finalShipping: shipping
+                for (const rule of policy.rules) {
+                    if (!rule.active || rule.type !== "FREE_OVER_AMOUNT") continue;
+                    if (rule.applyScope && rule.applyScope !== "ALL") continue;
+                    
+                    console.log(`FREE_OVER_AMOUNT 룰 확인: ${rule.label}`, {
+                        freeOverAmount: rule.freeOverAmount,
+                        comparisonAmount,
+                        eligible: rule.freeOverAmount && comparisonAmount >= rule.freeOverAmount
                     });
-                    break;
+                    
+                    if (rule.freeOverAmount && comparisonAmount >= rule.freeOverAmount) {
+                        shipping = 0;
+                        ruleApplied = true;
+                        console.log(`✅ FREE_OVER_AMOUNT 무료 배송: ${rule.label} (${comparisonAmount} >= ${rule.freeOverAmount})`);
+                        break;
+                    }
                 }
-            }
-            
-            // DEFAULT_FEE도 없고 서버가 0을 반환한 경우, 서버 값을 그대로 사용
-            if (shipping === 0 && pricing.deliveryFee === 0) {
-                console.log("❌ No shipping policy applied, using server deliveryFee: 0");
+                if (ruleApplied) break;
             }
         }
         
-        console.log("Final shipping calculation:", {
-            shippingRuleApplied,
-            finalShipping: shipping,
-            serverDeliveryFee: pricing.deliveryFee
-        });
+        // 3단계: DEFAULT_FEE 확인 (위의 룰들이 적용 안된 경우)
+        if (!ruleApplied) {
+            console.log("DEFAULT_FEE 룰 확인 중...");
+            for (const policy of activePolicies) {
+                if (!policy.rules || policy.rules.length === 0) continue;
+                
+                for (const rule of policy.rules) {
+                    if (!rule.active || rule.type !== "DEFAULT_FEE") continue;
+                    if (rule.applyScope && rule.applyScope !== "ALL") continue;
+                    if (rule.fee === undefined) continue;
+                    
+                    shipping = rule.fee;
+                    ruleApplied = true;
+                    console.log(`✅ DEFAULT_FEE 기본 배송비: ${rule.label} = ${rule.fee}원`);
+                    break;
+                }
+                if (ruleApplied) break;
+            }
+        }
+        
+        // 어떤 룰도 적용되지 않은 경우
+        if (!ruleApplied) {
+            console.log("⚠️ 적용된 배송비 룰 없음 - 배송비 0원");
+        }
+        
+        console.log("🚚 최종 배송비:", shipping);
     }
     
     // 최종 결제 금액 = 할인 후 상품 합계 + 배송비

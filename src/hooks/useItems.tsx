@@ -24,10 +24,9 @@ export const useItems = () => {
                     getActiveDiscountPolicies(),
                 ]);
 
-                // 삭제된 상품 및 안전재고 이하인 상품은 제외
+                // 삭제된 상품만 제외 (품절 상품은 표시)
                 const items: MenuItem[] = itemsRes.data
-                    .filter((i) => i.active !== false && !i.deletedAt) // 삭제된 상품 제외
-                    .filter((i) => i.stockQty > i.safetyStock) // 안전재고 이하 제외
+                    .filter((i) => i.active !== false && !i.deletedAt) // 삭제된 상품만 제외
                     .map((i) => ({
                         productId: String(i.productId),
                         name: i.name,
@@ -35,7 +34,8 @@ export const useItems = () => {
                         stockQty: i.stockQty,
                         safetyStock: i.safetyStock,
                         soldOutStatus: i.soldOutStatus,
-                        category: i.category,
+                        categoryCode: i.categoryCode,
+                        categoryName: i.categoryName,
                         taxType: i.taxType,
                         bankDiscount: [],
                         qtyDiscount: [],

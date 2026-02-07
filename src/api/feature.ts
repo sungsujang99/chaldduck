@@ -19,14 +19,14 @@ export const isOrderEnabled = async (): Promise<boolean> => {
   }
 };
 
-// 무통장 거래 기능 활성화 여부 확인
-export const isBankTransferEnabled = async (): Promise<boolean> => {
+// 배송 주문 기능 활성화 여부 확인
+export const isDeliveryOrderEnabled = async (): Promise<boolean> => {
   try {
     const res = await getFeatures();
-    const bankTransferFeature = res.data.find((f) => f.key === "BANK_TRANSFER");
-    return bankTransferFeature?.enabled ?? false;
+    const deliveryOrderFeature = res.data.find((f) => f.key === "DELIVERY_ORDER");
+    return deliveryOrderFeature?.enabled ?? false;
   } catch (error) {
-    console.error("Failed to check bank transfer feature:", error);
+    console.error("Failed to check delivery order feature:", error);
     return false;
   }
 };

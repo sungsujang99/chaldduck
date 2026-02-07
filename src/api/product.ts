@@ -6,7 +6,7 @@ import type {
   StockUpdateRequest,
 } from "../types/api";
 
-// 상품+재고 목록 조회
+// 상품+재고 목록 조회 (재고 정보 포함)
 export const getProducts = async (): Promise<JsonBody<AdminProductStockRow[]>> => {
   const response = await urlAxios.get("/admin/products", {
     headers: {

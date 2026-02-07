@@ -118,11 +118,23 @@ export interface AdminProductStockRow {
   stockQty: number;
   safetyStock: number;
   soldOutStatus: "IN_STOCK" | "LOW_STOCK" | "SOLD_OUT";
-  category?: ProductCategory;
+  categoryCode?: string;
+  categoryName?: string;
   taxType?: TaxType;
   purchasePrice?: number;
   active?: boolean;
   deletedAt?: string;
+  sortOrder?: number;
+}
+
+export interface ProductListRow {
+  productId: number;
+  name: string;
+  price: number;
+  categoryId?: number;
+  categoryCode?: string;
+  categoryName?: string;
+  taxType?: TaxType;
 }
 
 // 카테고리 한글 라벨
@@ -382,7 +394,7 @@ export interface ShippingRule {
   policy: ShippingPolicy;
   type: ShippingRuleType;
   label: string;
-  zipPrefix?: string;
+  zipCode?: string; // API 스펙에 맞게 zipCode로 변경
   fee?: number;
   freeOverAmount?: number;
   active: boolean;
@@ -393,7 +405,7 @@ export interface ShippingRuleResponse {
   policyId: number;
   type: ShippingRuleType;
   label: string;
-  zipPrefix?: string;
+  zipCode?: string; // API 스펙에 맞게 zipCode로 변경
   fee?: number;
   freeOverAmount?: number;
   active: boolean;
@@ -404,7 +416,7 @@ export interface ShippingRuleCreateRequest {
   policyId: number;
   type: ShippingRuleType;
   label: string;
-  zipPrefix?: string;
+  zipCode?: string; // API 스펙에 맞게 zipCode로 변경
   fee?: number;
   freeOverAmount?: number;
   active?: boolean;

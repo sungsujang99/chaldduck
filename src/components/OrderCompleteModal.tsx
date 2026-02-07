@@ -192,6 +192,7 @@ const Overlay = styled.div`
     align-items: center;
     z-index: 2000;
     padding: 20px;
+    overflow-y: auto; /* 스크롤 가능하게 */
 `;
 
 const ModalContent = styled.div`
@@ -200,7 +201,16 @@ const ModalContent = styled.div`
     padding: 24px;
     max-width: 500px;
     width: 100%;
+    max-height: 90vh; /* 최대 높이 제한 */
+    overflow-y: auto; /* 내용이 길면 스크롤 */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    margin: auto; /* 수직 중앙 정렬을 위해 */
+    
+    /* 모바일 최적화 */
+    @media (max-width: 768px) {
+        max-height: 85vh;
+        padding: 20px;
+    }
 `;
 
 const Header = styled.div`
