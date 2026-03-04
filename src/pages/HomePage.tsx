@@ -13,6 +13,7 @@ import { usePayment } from "../hooks/usePayment";
 import { useOrderSummary } from "../hooks/useOrderSummary";
 import { OrderConfirmModal } from "../components/OrderConfirmModal";
 import { OrderCompleteModal } from "../components/OrderCompleteModal";
+import { OrderFormNotice } from "../components/OrderFormNotice";
 import { createOrder, createPickupOrder } from "../api/order";
 import { createPayment, getPaymentByOrder } from "../api/payment";
 import { addAddress, updateAddress, identifyCustomer, getCustomerProfile } from "../api/customer";
@@ -596,6 +597,8 @@ export default function HomePage() {
                             setReceiptValue={setReceiptValue}
                             deliveryOrderEnabled={deliveryOrderEnabled}
                         />
+
+                        <OrderFormNotice />
 
                         <OrderSummary 
                             summary={summary} 

@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "chaldduck-system"
-  }
+    "default": "chaldduck-system",
+    "chaldduck": "chaldduck-35290"
+  },
+  "targets": {},
+  "etags": {}
 }

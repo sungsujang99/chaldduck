@@ -449,6 +449,15 @@ export interface ShippingPolicyCreateRequest {
   active?: boolean;
 }
 
+// Notice 관련
+export type NoticeType = "ORDER_FORM" | "DEPOSIT_CONFIRMATION";
+
+export interface NoticeResponse {
+  noticeId: number;
+  type: NoticeType;
+  content: string;
+}
+
 // Feature 관련
 export interface FeatureFlagResponse {
   key: string;

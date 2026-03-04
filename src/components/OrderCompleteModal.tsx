@@ -1,7 +1,8 @@
 // src/components/OrderCompleteModal.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_HOLDER, BANK_ACCOUNT } from "../constants/index";
+import { getNoticeByType } from "../api/notice";
 
 interface Props {
     show: boolean;
@@ -17,7 +18,19 @@ interface Props {
 
 export const OrderCompleteModal: React.FC<Props> = ({ show, orderNo, finalAmount, paymentMethod, buyerName, productAmount, discountAmount, deliveryFee, onClose }) => {
     const [copiedField, setCopiedField] = useState<string | null>(null);
-    
+    const [depositNoticeContent, setDepositNoticeContent] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (show && paymentMethod === "BANK_TRANSFER") {
+            getNoticeByType("DEPOSIT_CONFIRMATION").then((notice) => {
+                if (notice?.content) setDepositNoticeContent(notice.content);
+                else setDepositNoticeContent(null);
+            });
+        } else {
+            setDepositNoticeContent(null);
+        }
+    }, [show, paymentMethod]);
+
     const copyToClipboard = async (text: string, fieldName: string) => {
         try {
             await navigator.clipboard.writeText(text);
@@ -48,19 +61,19 @@ export const OrderCompleteModal: React.FC<Props> = ({ show, orderNo, finalAmount
         <Overlay onClick={onClose}>
             <ModalContent onClick={(e) => e.stopPropagation()}>
                 <Header>
-                    <Title>✅ 주문이 완료되었습니다!</Title>
                     <CloseButton onClick={onClose}>×</CloseButton>
                 </Header>
 
                 {paymentMethod === "BANK_TRANSFER" && (
                     <>
-                        <UrgentNotice>
-                            <UrgentTitle>⏰ 긴급 안내</UrgentTitle>
-                            <UrgentMessage>
-                                <strong>2시간 이내</strong>에 입금을 완료해주세요.<br />
-                                입금이 지연되면 주문이 자동 취소될 수 있습니다.
-                            </UrgentMessage>
-                        </UrgentNotice>
+                        {depositNoticeContent && (
+                            <UrgentNotice>
+                                <UrgentTitle>⏰ 긴급 안내</UrgentTitle>
+                                <UrgentMessage $preWrap>{depositNoticeContent}</UrgentMessage>
+                            </UrgentNotice>
+                        )}
+
+                        <OrderCompleteTitle>✅ 주문이 완료되었습니다!</OrderCompleteTitle>
 
                         <OrderNoSection>
                             <OrderNoLabel>입금자명</OrderNoLabel>
@@ -166,12 +179,15 @@ export const OrderCompleteModal: React.FC<Props> = ({ show, orderNo, finalAmount
                 )}
 
                 {paymentMethod === "CARD" && (
-                    <MessageSection>
-                        <p>주문이 정상적으로 완료되었습니다.</p>
-                        <p style={{ marginTop: "8px", fontSize: "14px", color: "#666" }}>
-                            주문번호: <strong>{orderNo}</strong>
-                        </p>
-                    </MessageSection>
+                    <>
+                        <OrderCompleteTitle>✅ 주문이 완료되었습니다!</OrderCompleteTitle>
+                        <MessageSection>
+                            <p>주문이 정상적으로 완료되었습니다.</p>
+                            <p style={{ marginTop: "8px", fontSize: "14px", color: "#666" }}>
+                                주문번호: <strong>{orderNo}</strong>
+                            </p>
+                        </MessageSection>
+                    </>
                 )}
 
                 <ButtonGroup>
@@ -215,15 +231,23 @@ const ModalContent = styled.div`
 
 const Header = styled.div`
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 12px;
 `;
 
-const Title = styled.h2`
-    font-size: 24px;
+const OrderCompleteTitle = styled.h2`
+    font-size: 32px;
     font-weight: bold;
-    margin: 0;
+    margin: 24px 0;
+    text-align: center;
+    color: #111;
+    line-height: 1.4;
+    
+    /* 모바일 최적화 */
+    @media (max-width: 768px) {
+        font-size: 28px;
+    }
 `;
 
 const CloseButton = styled.button`
@@ -288,11 +312,12 @@ const UrgentTitle = styled.div`
     margin-bottom: 8px;
 `;
 
-const UrgentMessage = styled.div`
+const UrgentMessage = styled.div<{ $preWrap?: boolean }>`
     font-size: 15px;
     color: #856404;
     line-height: 1.6;
     font-weight: 500;
+    ${({ $preWrap }) => $preWrap && "white-space: pre-wrap;"}
 `;
 
 const PaymentInfoSection = styled.div`
