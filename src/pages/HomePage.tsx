@@ -15,7 +15,8 @@ import { OrderConfirmModal } from "../components/OrderConfirmModal";
 import { OrderCompleteModal } from "../components/OrderCompleteModal";
 import { OrderFormNotice } from "../components/OrderFormNotice";
 import { createOrder, createPickupOrder } from "../api/order";
-import { createPayment, getPaymentByOrder } from "../api/payment";
+import { createPayment, getPaymentByOrder, confirmTossPayment } from "../api/payment";
+import { TossPaymentModal, getTossPendingOrder, clearTossPendingOrder, type TossPendingOrderData } from "../components/TossPaymentModal";
 import { addAddress, updateAddress, identifyCustomer, getCustomerProfile } from "../api/customer";
 import { isOrderEnabled, isDeliveryOrderEnabled, getOrderFeatureInfo } from "../api/feature";
 import type { FeatureFlagResponse } from "../types/api";
@@ -47,8 +48,72 @@ export default function HomePage() {
     const [completedProductAmount, setCompletedProductAmount] = useState<number>(0);
     const [completedDiscountAmount, setCompletedDiscountAmount] = useState<number>(0);
     const [completedDeliveryFee, setCompletedDeliveryFee] = useState<number>(0);
+    const [completedPaymentMethod, setCompletedPaymentMethod] = useState<"BANK_TRANSFER" | "CARD">("BANK_TRANSFER");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isMobile, setIsMobile] = useState<boolean>(false);
+    const [showTossPaymentModal, setShowTossPaymentModal] = useState(false);
+    const [tossPaymentData, setTossPaymentData] = useState<{
+        orderNo: string;
+        amount: number;
+        orderName: string;
+        finalAmount: number;
+        subtotalAmount: number;
+        discountAmount: number;
+        deliveryFee: number;
+    } | null>(null);
+
+    // 토스페이먼츠 결제 성공/실패 리다이렉트 처리
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const paymentSuccess = params.get("payment_success");
+        const paymentFail = params.get("payment_fail");
+        const paymentKey = params.get("paymentKey");
+        const orderId = params.get("orderId");
+        const amountStr = params.get("amount");
+        const failCode = params.get("code");
+        const failMessage = params.get("message");
+
+        if (paymentFail === "1") {
+            window.history.replaceState({}, "", window.location.pathname || "/");
+            alert(`결제가 실패했습니다.${failMessage ? `\n${failMessage}` : ""}${failCode ? ` (${failCode})` : ""}`);
+            return;
+        }
+
+        if (paymentSuccess === "1" && paymentKey && orderId && amountStr) {
+            const amount = parseInt(amountStr, 10);
+            const pendingOrder = getTossPendingOrder();
+
+            const handleConfirm = async () => {
+                try {
+                    await confirmTossPayment({ paymentKey, orderId, amount });
+                    window.history.replaceState({}, "", window.location.pathname || "/");
+                    clearTossPendingOrder();
+                    if (pendingOrder) {
+                        setCompletedOrderNo(pendingOrder.orderNo);
+                        setCompletedFinalAmount(pendingOrder.finalAmount);
+                        setCompletedProductAmount(pendingOrder.productAmount);
+                        setCompletedDiscountAmount(pendingOrder.discountAmount);
+                        setCompletedDeliveryFee(pendingOrder.deliveryFee);
+                    } else {
+                        setCompletedOrderNo(orderId);
+                        setCompletedFinalAmount(amount);
+                        setCompletedProductAmount(amount);
+                        setCompletedDiscountAmount(0);
+                        setCompletedDeliveryFee(0);
+                    }
+                    setCompletedPaymentMethod("CARD");
+                    setShowOrderComplete(true);
+                    setCart([]);
+                } catch (err: any) {
+                    console.error("Toss confirm error:", err);
+                    const errorMessage = err.response?.data?.message || err.message || "알 수 없는 오류";
+                    alert(`결제 승인에 실패했습니다: ${errorMessage}`);
+                }
+            };
+
+            handleConfirm();
+        }
+    }, []);
 
     // 모바일 여부 감지
     useEffect(() => {
@@ -507,15 +572,30 @@ export default function HomePage() {
                 }
             }
 
-            // 모든 단계가 성공한 경우에만 주문 완료 모달 표시
-            setCompletedOrderNo(orderNo);
-            setCompletedFinalAmount(finalAmount);
-            setCompletedProductAmount(subtotalAmount); // 물품가격은 할인 전 금액
-            setCompletedDiscountAmount(discountAmount); // 총 할인 금액
-            setCompletedDeliveryFee(deliveryFee);
-            setShowOrderComplete(true);
-            setCart([]);
-            setIsSubmitting(false);
+            if (paymentMethod === "CARD") {
+                const orderName = cart.length === 1 ? cart[0].name : `${cart[0].name} 외 ${cart.length - 1}건`;
+                setTossPaymentData({
+                    orderNo: orderNo,
+                    amount: finalAmount,
+                    orderName,
+                    finalAmount,
+                    subtotalAmount,
+                    discountAmount,
+                    deliveryFee,
+                });
+                setShowTossPaymentModal(true);
+                setIsSubmitting(false);
+            } else {
+                setCompletedOrderNo(orderNo);
+                setCompletedFinalAmount(finalAmount);
+                setCompletedProductAmount(subtotalAmount);
+                setCompletedDiscountAmount(discountAmount);
+                setCompletedDeliveryFee(deliveryFee);
+                setCompletedPaymentMethod("BANK_TRANSFER");
+                setShowOrderComplete(true);
+                setCart([]);
+                setIsSubmitting(false);
+            }
         } catch (err: any) {
             console.error("Unexpected error:", err);
             setIsSubmitting(false);
@@ -622,13 +702,42 @@ export default function HomePage() {
                 show={showOrderComplete}
                 orderNo={completedOrderNo}
                 finalAmount={completedFinalAmount}
-                paymentMethod={paymentMethod}
+                paymentMethod={completedPaymentMethod}
                 buyerName={buyerName}
                 productAmount={completedProductAmount}
                 discountAmount={completedDiscountAmount}
                 deliveryFee={completedDeliveryFee}
                 onClose={() => setShowOrderComplete(false)}
             />
+
+            {tossPaymentData && (
+                <TossPaymentModal
+                    show={showTossPaymentModal}
+                    amount={tossPaymentData.amount}
+                    orderNo={tossPaymentData.orderNo}
+                    orderName={tossPaymentData.orderName}
+                    customerName={buyerName}
+                    customerPhone={buyerPhone}
+                    pendingOrderData={{
+                        orderNo: tossPaymentData.orderNo,
+                        finalAmount: tossPaymentData.finalAmount,
+                        buyerName,
+                        productAmount: tossPaymentData.subtotalAmount,
+                        discountAmount: tossPaymentData.discountAmount,
+                        deliveryFee: tossPaymentData.deliveryFee,
+                    }}
+                    onClose={() => {
+                        setShowTossPaymentModal(false);
+                        setTossPaymentData(null);
+                    }}
+                    onSuccess={() => {}}
+                    onFail={(msg) => {
+                        alert(`⚠️ ${msg}`);
+                        setShowTossPaymentModal(false);
+                        setTossPaymentData(null);
+                    }}
+                />
+            )}
         </div>
     );
 }

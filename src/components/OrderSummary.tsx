@@ -228,28 +228,22 @@ export const OrderSummary: React.FC<Props> = ({
             )}
 
             <button
-                onClick={() => {
-                    if (paymentMethod === "CARD") {
-                        alert("⚠️ 카드/간편결제는 준비 중입니다. 무통장입금을 이용해주세요.");
-                        return;
-                    }
-                    onSubmit();
-                }}
-                disabled={!agreeTerms || !agreePrivacy || isSubmitting || paymentMethod === "CARD"}
+                onClick={() => onSubmit()}
+                disabled={!agreeTerms || !agreePrivacy || isSubmitting}
                 style={{
                     width: "100%",
                     padding: "16px",
-                    background: agreeTerms && agreePrivacy && !isSubmitting && paymentMethod !== "CARD" ? "#111" : "#ccc",
+                    background: agreeTerms && agreePrivacy && !isSubmitting ? "#111" : "#ccc",
                     color: "#fff",
                     border: "none",
                     borderRadius: "16px",
                     fontSize: "18px",
                     fontWeight: "bold",
-                    cursor: agreeTerms && agreePrivacy && !isSubmitting && paymentMethod !== "CARD" ? "pointer" : "not-allowed",
+                    cursor: agreeTerms && agreePrivacy && !isSubmitting ? "pointer" : "not-allowed",
                     marginTop: "20px",
                     marginBottom: "20px",
-                    boxShadow: agreeTerms && agreePrivacy && !isSubmitting && paymentMethod !== "CARD" ? "0 4px 12px rgba(0,0,0,0.15)" : "none",
-                    opacity: agreeTerms && agreePrivacy && !isSubmitting && paymentMethod !== "CARD" ? 1 : 0.6,
+                    boxShadow: agreeTerms && agreePrivacy && !isSubmitting ? "0 4px 12px rgba(0,0,0,0.15)" : "none",
+                    opacity: agreeTerms && agreePrivacy && !isSubmitting ? 1 : 0.6,
                 }}
             >
                 {isSubmitting ? "주문 처리 중..." : (summary ? `₩${summary.finalPrice.toLocaleString()} 주문하기` : "주문하기")}

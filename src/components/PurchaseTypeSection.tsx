@@ -171,6 +171,15 @@ export const PurchaseTypeSection: React.FC<Props> = ({ purchaseType, setPurchase
                     </div>
                 </div>
             )}
+
+            <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #eee", fontSize: "13px", color: "#666", lineHeight: "1.6" }}>
+                <b style={{ color: "#333" }}>💳 환불정책</b>
+                <ul style={{ margin: "6px 0 0 0", paddingLeft: "18px" }}>
+                    <li>주문 취소는 배송/픽업 준비 전까지 가능합니다.</li>
+                    <li>제품 하자·오배송 시 전액 환불 또는 교환해 드립니다.</li>
+                    <li>단순 변심 환불은 수령 전에만 가능하며, 배송비는 고객 부담입니다.</li>
+                </ul>
+            </div>
         </div>
     );
 };

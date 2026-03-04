@@ -12,3 +12,6 @@ export const SHOP_PHONE = "010-4144-0933";
 export const SHOP_REPRESENTATIVE = "이다금";
 export const SHOP_BUSINESS_NUMBER = "218-03-09205";
 export const SHOP_MAIL_ORDER_NUMBER = "2023-김해장유-0584";
+
+// 토스페이먼츠 결제위젯 클라이언트 키 (테스트)
+export const TOSS_CLIENT_KEY = "test_ck_ma60RZblrqJqzZkdNlxZ8wzYWBn1";

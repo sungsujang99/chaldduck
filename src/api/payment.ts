@@ -41,3 +41,17 @@ export const markPaymentPaid = async (
   const response = await urlAxios.post(`/payments/${paymentId}/paid`, data);
   return response.data;
 };
+
+// 토스페이먼츠 결제 승인 (서버에서 토스 API 호출 후 결제 완료 처리)
+export interface TossConfirmRequest {
+  paymentKey: string;
+  orderId: string;
+  amount: number;
+}
+
+export const confirmTossPayment = async (
+  data: TossConfirmRequest
+): Promise<JsonBody<PaymentResponse>> => {
+  const response = await urlAxios.post("/payments/toss/confirm", data);
+  return response.data;
+};

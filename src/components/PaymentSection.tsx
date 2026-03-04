@@ -43,22 +43,18 @@ export const PaymentSection: React.FC<Props> = ({ paymentMethod, setPaymentMetho
                     무통장입금
                 </button>
                 <button
-                    onClick={() => {
-                        alert("⚠️ 카드/간편결제는 준비 중입니다.");
-                    }}
-                    disabled={true}
+                    onClick={() => setPaymentMethod("CARD")}
                     style={{
                         padding: "12px",
                         border: paymentMethod === "CARD" ? "1px solid #111" : "1px solid #ccc",
                         borderRadius: "12px",
-                        cursor: "not-allowed",
+                        cursor: "pointer",
                         fontWeight: 600,
-                        background: "#f5f5f5",
-                        color: "#999",
-                        opacity: 0.6,
+                        background: paymentMethod === "CARD" ? "#111" : "#fff",
+                        color: paymentMethod === "CARD" ? "#fff" : "#000",
                     }}
                 >
-                    카드/간편결제(준비중)
+                    카드/간편결제
                 </button>
             </div>
 
@@ -138,16 +134,9 @@ export const PaymentSection: React.FC<Props> = ({ paymentMethod, setPaymentMetho
             )}
 
             {paymentMethod === "CARD" && (
-                <div style={{ marginTop: "10px" }}>
-                    <h4 style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "8px" }}>💳 사용 가능한 결제 수단</h4>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
-                        <button style={{ padding: "12px", border: "1px solid #ccc", borderRadius: "12px", cursor: "pointer", fontWeight: 600, background: "#fff" }}>Toss 결제</button>
-                        <button style={{ padding: "12px", border: "1px solid #ccc", borderRadius: "12px", cursor: "pointer", fontWeight: 600, background: "#fff" }}>KakaoPay</button>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                        <button style={{ padding: "12px", border: "1px solid #ccc", borderRadius: "12px", cursor: "pointer", fontWeight: 600, background: "#fff" }}>NaverPay</button>
-                        <button style={{ padding: "12px", border: "1px solid #ccc", borderRadius: "12px", cursor: "pointer", fontWeight: 600, background: "#fff" }}>일반 카드결제</button>
-                    </div>
+                <div style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
+                    <p style={{ margin: 0 }}>주문하기 버튼을 누르면 토스페이먼츠 결제창이 열립니다.</p>
+                    <p style={{ margin: "4px 0 0 0" }}>카드, 계좌이체, 간편결제(토스페이, 카카오페이 등)를 이용할 수 있습니다.</p>
                 </div>
             )}
         </div>
