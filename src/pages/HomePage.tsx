@@ -55,6 +55,7 @@ export default function HomePage() {
     const [showTossPaymentModal, setShowTossPaymentModal] = useState(false);
     const [tossPaymentData, setTossPaymentData] = useState<{
         orderNo: string;
+        orderId: number;
         amount: number;
         orderName: string;
         finalAmount: number;
@@ -577,6 +578,7 @@ export default function HomePage() {
                 const orderName = cart.length === 1 ? cart[0].name : `${cart[0].name} 외 ${cart.length - 1}건`;
                 setTossPaymentData({
                     orderNo: orderNo,
+                    orderId: orderId,
                     amount: finalAmount,
                     orderName,
                     finalAmount,
@@ -636,7 +638,6 @@ export default function HomePage() {
                         )}
                     </div>
                 )}
-                <button onClick={() => setOrderEnabled(true)}>test</button>
 
                 {orderEnabled && (
                     <>
@@ -744,6 +745,7 @@ export default function HomePage() {
                     buyerId={buyerId}
                     amount={tossPaymentData.amount}
                     orderNo={tossPaymentData.orderNo}
+                    orderId={tossPaymentData.orderId}
                     orderName={tossPaymentData.orderName}
                     customerName={buyerName}
                     customerPhone={buyerPhone}

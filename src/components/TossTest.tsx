@@ -2,10 +2,12 @@ import { useEffect, useRef } from "react";
 import { TOSS_CLIENT_KEY } from "../constants";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { TossPendingOrderData } from "./TossPaymentModal";
+import urlAxios from "../utils/urlAxios";
 
 interface OwnProps {
     show: boolean;
     buyerId: number | null;
+    orderId: number;
     amount: number;
     orderNo: string;
     orderName: string;
@@ -17,7 +19,19 @@ interface OwnProps {
     onFail: (message: string) => void;
 }
 
-export const TossTest = ({ show, buyerId, amount, orderNo, orderName, customerName, customerPhone, pendingOrderData, onClose, onSuccess, onFail }: OwnProps) => {
+interface TossCheckoutResponse {
+    status: number;
+    message: string;
+    data: {
+        orderId: string;
+        amount: number;
+        orderName: string;
+        successUrl: string;
+        failUrl: string;
+    };
+}
+
+export const TossTest = ({ show, buyerId, amount, orderNo, orderName, orderId, customerName, customerPhone, pendingOrderData, onClose, onSuccess, onFail }: OwnProps) => {
     const callbacksRef = useRef({ onClose, onSuccess, onFail });
     callbacksRef.current = { onClose, onSuccess, onFail };
     const hasStartedRef = useRef(false);
@@ -37,6 +51,8 @@ export const TossTest = ({ show, buyerId, amount, orderNo, orderName, customerNa
                 return;
             }
             try {
+                const { data: checkout } = await urlAxios.get<TossCheckoutResponse>(`payments/toss/checkout/${orderId}`);
+
                 const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
                 const payment = tossPayments.payment({ customerKey: "USER_ID_" + buyerId });
 
@@ -44,12 +60,12 @@ export const TossTest = ({ show, buyerId, amount, orderNo, orderName, customerNa
                     method: "CARD",
                     amount: {
                         currency: "KRW",
-                        value: amount,
+                        value: checkout.data.amount,
                     },
-                    orderId: orderNo,
-                    orderName: orderName,
-                    successUrl: window.location.origin + "/success",
-                    failUrl: window.location.origin + "/fail",
+                    orderId: checkout.data.orderId,
+                    orderName: checkout.data.orderName,
+                    successUrl: checkout.data.successUrl,
+                    failUrl: checkout.data.failUrl,
                     //customerEmail: "customer123@gmail.com",
                     customerName: customerName,
                     card: {
@@ -70,7 +86,7 @@ export const TossTest = ({ show, buyerId, amount, orderNo, orderName, customerNa
         };
 
         void requestPayment();
-    }, [show, amount, orderNo, orderName, customerName, buyerId]);
+    }, [show, amount, orderNo, orderName, customerName, buyerId, orderId]);
 
     return null;
 };

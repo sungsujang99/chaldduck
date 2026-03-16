@@ -14,5 +14,5 @@ export const SHOP_BUSINESS_NUMBER = "218-03-09205";
 export const SHOP_MAIL_ORDER_NUMBER = "2023-김해장유-0584";
 
 // 토스페이먼츠 결제위젯 클라이언트 키 (테스트)
-export const TOSS_CLIENT_KEY = "test_ck_ma60RZblrqJqzZkdNlxZ8wzYWBn1";
-export const SECRET_KEY = "test_sk_Ba5PzR0ArnEjwQQ2EK6NVvmYnNeD";
+export const TOSS_CLIENT_KEY = "live_ck_Ba5PzR0Arn9yLvwmNj1zVvmYnNeD";
+export const SECRET_KEY = "ㅁㄴㅇㄹ";
