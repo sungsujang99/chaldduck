@@ -1,54 +1,27 @@
-import axios from "axios";
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { SECRET_KEY } from "../constants";
-import urlAxios from "../utils/urlAxios";
 
 export const PaymentSuccessPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const paymentKey = searchParams.get("paymentKey");
-    const orderId = searchParams.get("orderId");
-    const amount = Number(searchParams.get("amount") ?? "0");
-    const body = {
-        paymentKey,
-        orderId,
-        amount,
-    };
-    const encoded = btoa(SECRET_KEY + ":");
-    const authHeader = `Basic ${encoded}`;
 
-    // 서버에 전송할 부분 채워서 쓸 것.
-    // const submitPaymentSucccess = async () => {
-    //     try{
-    //         const res = await urlAxios.post(`/payments/`)
-    //     }
-    // }
+    const status = searchParams.get("status");
+
     useEffect(() => {
-        if (!paymentKey || !orderId || amount <= 0) {
+        if (!status) {
+            alert("결제에 실패했습니다. 문제가 계속되면 다른 결제 수단을 이용해 주세요.");
+            navigate("/");
             return;
         }
 
-        const handlePaymentSuccess = async () => {
-            try {
-                const res = await axios.post(`https://api.tosspayments.com/v1/payments/confirm`, body, {
-                    headers: {
-                        Authorization: authHeader,
-                    },
-                });
-                console.log(res.data);
-                alert("결제 완료되었습니다.");
-                navigate("/");
-            } catch (error) {
-                // const confirmed = confirm("Payment success error:" + error);
-                // if (confirmed) {
-                //     navigate("/");
-                // }
-                console.log("Payment success error:" + error);
-            }
-        };
-        handlePaymentSuccess();
-    }, [paymentKey, orderId, amount]);
+        if (status === "PAID") {
+            alert("결제가 완료되었습니다.");
+            navigate("/");
+        } else {
+            alert("결제에 실패했습니다. 문제가 계속되면 다른 결제 수단을 이용해 주세요.");
+            navigate("/");
+        }
+    }, [status, navigate]);
 
-    return <div>결제 완료중..</div>;
+    return <div>결제 처리중..</div>;
 };

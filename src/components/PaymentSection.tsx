@@ -15,7 +15,17 @@ interface Props {
     deliveryOrderEnabled?: boolean;
 }
 
-export const PaymentSection: React.FC<Props> = ({ paymentMethod, setPaymentMethod, showReceipt, setShowReceipt, receiptType, setReceiptType, receiptValue, setReceiptValue, deliveryOrderEnabled = true }) => {
+export const PaymentSection: React.FC<Props> = ({
+    paymentMethod,
+    setPaymentMethod,
+    showReceipt,
+    setShowReceipt,
+    receiptType,
+    setReceiptType,
+    receiptValue,
+    setReceiptValue,
+    deliveryOrderEnabled = true,
+}) => {
     const toggleReceipt = (show: boolean) => {
         setShowReceipt(show);
         if (!show) {
@@ -45,7 +55,7 @@ export const PaymentSection: React.FC<Props> = ({ paymentMethod, setPaymentMetho
                 <button
                     onClick={() => {
                         setPaymentMethod("CARD");
-                        alert("카드 도입 심사용");
+                        //alert("카드 도입 심사용");
                     }}
                     style={{
                         padding: "12px",
