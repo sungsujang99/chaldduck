@@ -33,15 +33,6 @@ export const getPaymentByOrder = async (
   return response.data;
 };
 
-// 결제 완료 처리 (입금 확인)
-export const markPaymentPaid = async (
-  paymentId: number,
-  data: PaymentMarkPaidRequest
-): Promise<JsonBody<PaymentResponse>> => {
-  const response = await urlAxios.post(`/payments/${paymentId}/paid`, data);
-  return response.data;
-};
-
 // 토스페이먼츠 결제 승인 (서버에서 토스 API 호출 후 결제 완료 처리)
 export interface TossConfirmRequest {
   paymentKey: string;

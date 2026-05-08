@@ -34,17 +34,17 @@ export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, it
         });
 
         const groups: Record<string, { name: string; items: FetchedMenuItem[]; categorySortOrder: number }> = {};
-        
-        sortedItems.forEach(item => {
+
+        sortedItems.forEach((item) => {
             const categoryCode = item.categoryCode || "OTHER";
             const categoryName = item.categoryName || "기타";
             const categorySortOrder = item.categorySortOrder ?? 9999;
-            
+
             if (!groups[categoryCode]) {
                 groups[categoryCode] = {
                     name: categoryName,
                     items: [],
-                    categorySortOrder
+                    categorySortOrder,
                 };
             }
             groups[categoryCode].items.push(item);
@@ -56,16 +56,16 @@ export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, it
                 category: code,
                 label: data.name,
                 items: data.items,
-                categorySortOrder: data.categorySortOrder
+                categorySortOrder: data.categorySortOrder,
             }))
             .sort((a, b) => a.categorySortOrder - b.categorySortOrder);
     }, [items]);
 
     // 카테고리 토글 함수
     const toggleCategory = (category: string) => {
-        setExpandedCategories(prev => ({
+        setExpandedCategories((prev) => ({
             ...prev,
-            [category]: !prev[category]
+            [category]: !prev[category],
         }));
     };
 
@@ -116,57 +116,48 @@ export const ProductSelection: React.FC<Props> = ({ cart, changeQty, summary, it
                                 </CategoryTitle>
                                 <CategoryCount>({group.items.length})</CategoryCount>
                             </CategoryHeader>
-                            {isExpanded && group.items.map((p) => {
-                            const item = cart.find((x) => x.id === p.productId);
-                            const q = item ? item.qty : 0;
-                            const isEditing = editingProductId === p.productId;
-                            // 품절 여부 확인: 재고가 안전재고 이하이거나 soldOutStatus가 SOLD_OUT
-                            const isSoldOut = p.soldOutStatus === "SOLD_OUT" || p.stockQty <= p.safetyStock;
+                            {isExpanded &&
+                                group.items.map((p) => {
+                                    const item = cart.find((x) => x.id === p.productId);
+                                    const q = item ? item.qty : 0;
+                                    const isEditing = editingProductId === p.productId;
+                                    // 품절 여부 확인: 재고가 안전재고 이하이거나 soldOutStatus가 SOLD_OUT
+                                    const isSoldOut = p.soldOutStatus === "SOLD_OUT" || p.stockQty <= p.safetyStock;
 
-                            return (
-                                <ProductItem key={p.productId} style={{ opacity: isSoldOut ? 0.6 : 1 }}>
-                                    <ProductInfo>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                            <b style={{ color: isSoldOut ? "#999" : "#000" }}>{p.name}</b>
-                                            {isSoldOut && (
-                                                <SoldOutBadge>품절</SoldOutBadge>
-                                            )}
-                                        </div>
-                                        <span style={{ color: isSoldOut ? "#999" : "#000" }}>₩{p.price.toLocaleString()}</span>
-                                    </ProductInfo>
+                                    return (
+                                        <ProductItem key={p.productId} style={{ opacity: isSoldOut ? 0.6 : 1 }}>
+                                            <ProductInfo>
+                                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                    <b style={{ color: isSoldOut ? "#999" : "#000" }}>{p.name}</b>
+                                                    {isSoldOut && <SoldOutBadge>품절</SoldOutBadge>}
+                                                </div>
+                                                <span style={{ color: isSoldOut ? "#999" : "#000" }}>₩{p.price.toLocaleString()}</span>
+                                            </ProductInfo>
 
-                                    {orderEnabled && !isSoldOut && (
-                                        <QuantityControls>
-                                            <QtyButton onClick={() => changeQty(p, -1)}>-</QtyButton>
-                                            {isEditing ? (
-                                                <QuantityInput
-                                                    type="number"
-                                                    min="0"
-                                                    value={editValue}
-                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                    onBlur={() => handleQuantityBlur(p, q)}
-                                                    onKeyDown={(e) => handleQuantityKeyDown(e, p, q)}
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <Quantity onClick={() => handleQuantityClick(p.productId, q)}>{q}</Quantity>
+                                            {orderEnabled && !isSoldOut && (
+                                                <QuantityControls>
+                                                    <QtyButton onClick={() => changeQty(p, -1)}>-</QtyButton>
+                                                    {isEditing ? (
+                                                        <QuantityInput
+                                                            type="number"
+                                                            min="0"
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            onBlur={() => handleQuantityBlur(p, q)}
+                                                            onKeyDown={(e) => handleQuantityKeyDown(e, p, q)}
+                                                            autoFocus
+                                                        />
+                                                    ) : (
+                                                        <Quantity onClick={() => handleQuantityClick(p.productId, q)}>{q}</Quantity>
+                                                    )}
+                                                    <QtyButton onClick={() => changeQty(p, 1)}>+</QtyButton>
+                                                </QuantityControls>
                                             )}
-                                            <QtyButton onClick={() => changeQty(p, 1)}>+</QtyButton>
-                                        </QuantityControls>
-                                    )}
-                                    {orderEnabled && isSoldOut && (
-                                        <div style={{ fontSize: "14px", color: "#999", fontWeight: "600" }}>
-                                            선택 불가
-                                        </div>
-                                    )}
-                                    {!orderEnabled && (
-                                        <div style={{ fontSize: "14px", color: "#666" }}>
-                                            ₩{p.price.toLocaleString()}
-                                        </div>
-                                    )}
-                                </ProductItem>
-                            );
-                            })}
+                                            {orderEnabled && isSoldOut && <div style={{ fontSize: "14px", color: "#999", fontWeight: "600" }}>선택 불가</div>}
+                                            {!orderEnabled && <div style={{ fontSize: "14px", color: "#666" }}>₩{p.price.toLocaleString()}</div>}
+                                        </ProductItem>
+                                    );
+                                })}
                         </CategorySection>
                     );
                 })}
@@ -228,7 +219,7 @@ const Title = styled.h3`
 
 const CategorySection = styled.div`
     margin-bottom: 16px;
-    
+
     &:last-child {
         margin-bottom: 0;
     }
@@ -245,7 +236,7 @@ const CategoryHeader = styled.div`
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: 8px;
     margin-bottom: 10px;
-    border-left: 3px solid #1E6EFF;
+    border-left: 3px solid #1e6eff;
     cursor: pointer;
     user-select: none;
     transition: background-color 0.2s;
@@ -267,7 +258,7 @@ const CategoryTitle = styled.div`
 
 const CategoryIcon = styled.span`
     font-size: 12px;
-    color: #1E6EFF;
+    color: #1e6eff;
     transition: transform 0.2s;
 `;
 
@@ -328,11 +319,11 @@ const Quantity = styled.span`
     border-radius: 6px;
     transition: background-color 0.2s;
     user-select: none;
-    
+
     &:hover {
         background-color: #f0f0f0;
     }
-    
+
     &:active {
         background-color: #e0e0e0;
     }
@@ -344,12 +335,12 @@ const QuantityInput = styled.input`
     font-weight: 600;
     font-size: 15px;
     padding: 4px 6px;
-    border: 2px solid #1E6EFF;
+    border: 2px solid #1e6eff;
     border-radius: 6px;
     outline: none;
-    
+
     &:focus {
-        border-color: #1E6EFF;
+        border-color: #1e6eff;
         box-shadow: 0 0 0 2px rgba(30, 110, 255, 0.2);
     }
 `;
